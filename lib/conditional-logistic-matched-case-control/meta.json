@@ -1,0 +1,40 @@
+{
+  "id": "conditional-logistic-matched-case-control",
+  "title": "Conditional logistic regression for a matched case-control study",
+  "summary": "Estimates the exposure odds ratio conditional on the matched sets, eliminating the matching factor from the likelihood rather than adjusting for it.",
+
+  "_keying": "Keyed on the TYPED ESTIMAND and the method, never on what generated code calls itself. Measured 2026-09-06: 26 R blocks in the corpus carried 26 distinct analysis headers with zero repeats, because a header is a study-specific description. Roughly 18 methods sit behind those 26 blocks.",
+
+  "estimand": {
+    "target": ["causal", "associational"],
+    "summaryMeasure": ["oddsRatio"],
+    "assignment": ["nonrandomized"],
+    "clustered": false,
+    "repeatedMeasures": false,
+    "competingEvents": false
+  },
+
+  "learn": "design.case_control",
+
+  "sizing": {
+    "calc": "none",
+    "_why": "A matched or nested case-control has NO form in Mallard's sizing catalog and must not borrow one. This is a hard rule under Statistical correctness: a live brief chose calc 'paired' while its own note correctly cited Dupont 1988 and said this is not an unmatched two-proportion formula. 'paired' is a continuous mean-difference formula. The honest route is 'none' plus the discordant-set method named in prose. epiR::epi.sscc is the reference for anyone with R who wants to implement Dupont properly."
+  },
+
+  "packages": {
+    "r": { "survival": "3.5-8" },
+    "python": { "statsmodels": "0.14.2", "pandas": "2.2.2", "numpy": "1.26.4" },
+    "sas": {},
+    "stata": {}
+  },
+
+  "pinned_defaults": [
+    "R: method = 'exact'. clogit passes through to coxph, whose default is ties = 'efron'; the two differ when a matched set holds more than one case.",
+    "R: exposure kept numeric 0/1, so no alphabetical factor ordering can silently choose the reference level and invert the odds ratio.",
+    "Python: no intercept. A conditional likelihood has none, so the design matrix is built explicitly rather than from a formula string that would add one.",
+    "SAS: model case(event='1'). PROC LOGISTIC models the LOWER ordered value by default, which for a 0/1 outcome inverts every odds ratio in the output.",
+    "Stata: coefficients, not the 'or' option, because the harness compares on the log-odds scale."
+  ],
+
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+}

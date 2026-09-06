@@ -1,0 +1,67 @@
+{
+  "method": "conditional-logistic-matched-case-control",
+  "fixture": "fixture.csv",
+  "fixture_sha256": "computed by the harness at run time, so a silently edited fixture fails loudly",
+
+  "_why_two_claims": [
+    "AGREEMENT and RECOVERY are different claims and the library makes both, separately.",
+    "Agreement asks whether the four implementations compute the same thing. It is tight, because",
+    "given identical data any real difference is a package default, which is exactly the failure the",
+    "schema prompt warns about: 'silently different defaults are how two correct-looking",
+    "implementations disagree'.",
+    "Recovery asks whether they compute the RIGHT thing. It is loose, because an estimate carries",
+    "sampling error, and its job is to catch four implementations that agree on the same wrong model.",
+    "Agreement alone would pass four identical mistakes. Recovery alone would pass a default mismatch",
+    "smaller than sampling error. Neither is sufficient and this is why."
+  ],
+
+  "_why_not_self_generated": [
+    "expected values are NOT produced by running this library's own code and recording the output.",
+    "That is the golden-file trap this project has already documented: a golden regenerated from the",
+    "build it is meant to check passes against whatever the build produced, and pins nothing.",
+    "The truth here is independent of every implementation: the fixture generator chooses the case",
+    "within each matched set with probability proportional to exp(b1*x1 + b2*x2), which IS the",
+    "conditional likelihood clogit maximises, so the true betas are the model's own parameters."
+  ],
+
+  "truth": {
+    "source": "the fixture's data-generating process, not any implementation of the analysis",
+    "exposure_log_or": 0.6931471805599453,
+    "exposure_or": 2.0,
+    "covariate_beta": 0.4
+  },
+
+  "agreement": {
+    "claim": "every EXECUTED language reproduces the same estimates on identical rows",
+    "tolerance_log_or": 1e-06,
+    "tolerance_se": 1e-05,
+    "_note": "1e-6 on the log-OR is far below any real effect and far above optimiser noise. A miss at this scale is a different model or a different default, never rounding."
+  },
+
+  "recovery": {
+    "claim": "the estimate is close to the parameter the fixture actually used",
+    "tolerance_log_or": 0.45,
+    "_note": [
+      "PROVISIONAL, and deliberately marked so. 0.45 is roughly three standard errors under a",
+      "back-of-envelope SE of about 0.15 for 400 matched sets at 35% exposure. Nothing here has run",
+      "the model, so the real SE is unmeasured. The FIRST CI run must report the observed standard",
+      "error and this tolerance must then be reset to a stated multiple of it. Leaving a guessed",
+      "tolerance in place would be a check calibrated against nothing."
+    ]
+  },
+
+  "must_appear": {
+    "_note": "call sites codecheck.js can look for. Presence is not correctness: crr( being called says a competing-risks function was called, not that the right variable reached it.",
+    "r": ["clogit(", "strata("],
+    "python": ["ConditionalLogit"],
+    "sas": ["proc logistic", "strata"],
+    "stata": ["clogit"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": true },
+    "sas": { "executed": false, "reason": "no SAS engine licensed yet; see repository README on Altair SLC, which is SAS-language-compatible rather than SAS itself" },
+    "stata": { "executed": false, "reason": "no Stata licence yet; the AEA Data Editor CI pattern applies once one exists" }
+  }
+}

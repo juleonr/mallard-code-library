@@ -1,0 +1,66 @@
+# Executes every library entry and checks the two claims. Runs on the PUBLIC repository once it
+# exists; it is staged here so the move is a directory rename rather than a rewrite.
+name: verify
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.4.1"
+      # Versions are pinned in each entry's meta.json. Installing latest would make a green run
+      # mean "passes against whatever CRAN shipped today", which is the moving oracle this library
+      # exists to replace.
+      - name: R packages
+        run: Rscript -e 'install.packages(c("survival"), repos = "https://cloud.r-project.org")'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python packages
+        run: pip install "pandas==2.2.2" "numpy==1.26.4" "statsmodels==0.14.2"
+
+      - name: Run every entry and check both claims
+        run: |
+          set -euo pipefail
+          fail=0
+          for entry in lib/*/; do
+            name=$(basename "$entry")
+            echo "::group::$name"
+            args=()
+            if [ -f "$entry/r.R" ]; then
+              (cd "$entry" && Rscript r.R) > "/tmp/$name.r.txt" 2>&1 || { echo "R FAILED"; cat "/tmp/$name.r.txt"; fail=1; }
+              [ -s "/tmp/$name.r.txt" ] && args+=(--output "r=/tmp/$name.r.txt")
+            fi
+            if [ -f "$entry/python.py" ]; then
+              (cd "$entry" && python python.py) > "/tmp/$name.py.txt" 2>&1 || { echo "PYTHON FAILED"; cat "/tmp/$name.py.txt"; fail=1; }
+              [ -s "/tmp/$name.py.txt" ] && args+=(--output "python=/tmp/$name.py.txt")
+            fi
+            python harness/check.py --entry "$entry" "${args[@]}" || fail=1
+            echo "::endgroup::"
+          done
+          exit $fail
+
+      # A step is `bash -eo pipefail`, so a `find` over a missing directory ends the step having
+      # printed nothing. mapfile keeps the exit status readable.
+      - name: Lint the languages that cannot be executed
+        run: |
+          mapfile -t sas < <(find lib -name '*.sas')
+          mapfile -t stata < <(find lib -name '*.do')
+          echo "SAS files: ${#sas[@]}   Stata files: ${#stata[@]}"
+          for f in "${sas[@]}"; do
+            grep -qi 'run;' "$f" || { echo "$f: no run; statement"; exit 1; }
+            grep -qi "event=" "$f" || echo "$f: NOTE no event= on a model statement; check the modelled level"
+          done
+          for f in "${stata[@]}"; do
+            grep -q ';' "$f" && { echo "$f: Stata does not end commands with semicolons"; exit 1; }
+          done
+          echo "structural lint passed; these files are NOT executed and no entry claims they are"
