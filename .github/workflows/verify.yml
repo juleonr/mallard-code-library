@@ -25,8 +25,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # SCIPY IS PINNED BECAUSE THE FIRST RUN OF THIS WORKFLOW FAILED WITHOUT IT.
+      # statsmodels 0.14.2 imports scipy._lib._util._lazywhere, a private helper newer scipy
+      # removed, so pip resolving scipy to latest broke the import outright. Pinning the packages
+      # a file names while letting their transitive dependencies float is not pinning: the
+      # environment still moves, just somewhere harder to see.
       - name: Python packages
-        run: pip install "pandas==2.2.2" "numpy==1.26.4" "statsmodels==0.14.2"
+        run: pip install "pandas==2.2.2" "numpy==1.26.4" "scipy==1.13.1" "statsmodels==0.14.2"
 
       - name: Run every entry and check both claims
         run: |
@@ -36,13 +41,25 @@ jobs:
             name=$(basename "$entry")
             echo "::group::$name"
             args=()
+            # A language that ERRORED contributes no output to the comparison. Passing its
+            # traceback made the first run report "no HARNESS block" for Python and say nothing
+            # at all about R, which had actually succeeded -- one broken engine hid the other's
+            # result. The job still fails (fail=1); it just reports everything it learned first.
             if [ -f "$entry/r.R" ]; then
-              (cd "$entry" && Rscript r.R) > "/tmp/$name.r.txt" 2>&1 || { echo "R FAILED"; cat "/tmp/$name.r.txt"; fail=1; }
-              [ -s "/tmp/$name.r.txt" ] && args+=(--output "r=/tmp/$name.r.txt")
+              if (cd "$entry" && Rscript r.R) > "/tmp/$name.r.txt" 2>&1; then
+                args+=(--output "r=/tmp/$name.r.txt")
+                sed -n '/--- HARNESS ---/,$p' "/tmp/$name.r.txt" | sed 's/^/  r      /'
+              else
+                echo "R FAILED"; cat "/tmp/$name.r.txt"; fail=1
+              fi
             fi
             if [ -f "$entry/python.py" ]; then
-              (cd "$entry" && python python.py) > "/tmp/$name.py.txt" 2>&1 || { echo "PYTHON FAILED"; cat "/tmp/$name.py.txt"; fail=1; }
-              [ -s "/tmp/$name.py.txt" ] && args+=(--output "python=/tmp/$name.py.txt")
+              if (cd "$entry" && python python.py) > "/tmp/$name.py.txt" 2>&1; then
+                args+=(--output "python=/tmp/$name.py.txt")
+                sed -n '/--- HARNESS ---/,$p' "/tmp/$name.py.txt" | sed 's/^/  python /'
+              else
+                echo "PYTHON FAILED"; cat "/tmp/$name.py.txt"; fail=1
+              fi
             fi
             python harness/check.py --entry "$entry" "${args[@]}" || fail=1
             echo "::endgroup::"
