@@ -1,0 +1,34 @@
+{
+  "id": "cox-proportional-hazards",
+  "title": "Cox proportional hazards regression",
+  "summary": "Estimates a hazard ratio while conditioning the baseline hazard away, so no shape is assumed for it.",
+
+  "estimand": {
+    "target": ["causal", "associational", "prognostic"],
+    "summaryMeasure": ["hazardRatio"],
+    "assignment": ["randomized", "nonrandomized"],
+    "clustered": false,
+    "repeatedMeasures": false,
+    "competingEvents": false
+  },
+
+  "learn": "analysis.cox",
+
+  "sizing": { "calc": "logrank" },
+
+  "_competing_events_are_a_different_entry": "This entry assumes NO competing event. Where death competes with the event of interest, a cause-specific or Fine-Gray model is required and a Kaplan-Meier curve is not merely off-message: it censors the competing death and overstates cumulative incidence. competingEvents is false above for that reason, and a plan typing it true must not be routed here.",
+
+  "packages": {
+    "r": { "survival": "3.5-8" },
+    "python": { "lifelines": "0.28.0", "pandas": "2.2.2", "scipy": "1.13.1", "numpy": "1.26.4" }
+  },
+
+  "pinned_defaults": [
+    "R: ties='efron'. This IS coxph's default and is named anyway, so one package upgrade cannot change the answer silently.",
+    "Python: lifelines uses Efron and offers no alternative, which happens to match. Stated rather than relied on: if that ever changed, the agreement check is what would catch it.",
+    "SAS: ties=efron. PROC PHREG DEFAULTS TO BRESLOW, so omitting it makes SAS disagree with every other language whenever event times tie.",
+    "Stata: efron. stcox also DEFAULTS TO BRESLOW, same problem."
+  ],
+
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+}
