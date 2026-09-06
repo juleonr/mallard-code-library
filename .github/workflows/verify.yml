@@ -92,18 +92,13 @@ jobs:
           done
           exit $fail
 
-      # A step is `bash -eo pipefail`, so a `find` over a missing directory ends the step having
-      # printed nothing. mapfile keeps the exit status readable.
+      # The lint is a MODULE with its own controls, not inline bash. The inline version was wrong
+      # in both of its rules on its first execution: it read a semicolon out of a Stata prose
+      # comment, and it demanded event= of a PROC GENMOD statement, where the concept does not
+      # exist. Inline CI bash is unreviewed code -- nothing runs it but the runner and nothing
+      # tests it at all. harness/lint.test.py carries a negative control for each of those two
+      # false positives, built from the exact text that tripped them.
       - name: Lint the languages that cannot be executed
         run: |
-          mapfile -t sas < <(find lib -name '*.sas')
-          mapfile -t stata < <(find lib -name '*.do')
-          echo "SAS files: ${#sas[@]}   Stata files: ${#stata[@]}"
-          for f in "${sas[@]}"; do
-            grep -qi 'run;' "$f" || { echo "$f: no run; statement"; exit 1; }
-            grep -qi "event=" "$f" || echo "$f: NOTE no event= on a model statement; check the modelled level"
-          done
-          for f in "${stata[@]}"; do
-            grep -q ';' "$f" && { echo "$f: Stata does not end commands with semicolons"; exit 1; }
-          done
-          echo "structural lint passed; these files are NOT executed and no entry claims they are"
+          python harness/lint.test.py
+          python harness/lint.py --root lib
