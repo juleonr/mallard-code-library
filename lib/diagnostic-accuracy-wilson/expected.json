@@ -1,0 +1,41 @@
+{
+  "method": "diagnostic-accuracy-wilson",
+  "fixture": "fixture.csv",
+
+  "_why_two_claims": "AGREEMENT asks whether the engines compute the same thing; RECOVERY asks whether they compute the right thing. Neither implies the other.",
+
+  "_why_not_self_generated": "The fixture draws disease status first and the test result CONDITIONAL on it with fixed sensitivity and specificity, so those two numbers are properties of the generator. Prevalence is 0.30 rather than 0.50 on purpose: sensitivity and specificity do not depend on prevalence, so a fixture at 0.50 would let an implementation quietly computing PREDICTIVE VALUES instead still land near the truth.",
+
+  "truth": {
+    "source": "the fixture's data-generating process",
+    "sensitivity": 0.85,
+    "specificity": 0.90
+  },
+
+  "agreement": {
+    "claim": "both engines report the same point estimates AND the same Wilson interval bounds",
+    "tolerance_estimate": 0.0001,
+    "tolerance_se": 0.0001,
+    "_note": "The intervals are the point of this entry. binom::binom.confint and statsmodels proportion_confint are INDEPENDENT implementations of the Wilson formula, not the same arithmetic typed twice, so their bounds agreeing is evidence. Both packages also default to something else: binom.confint defaults to methods='all' (eleven rows), proportion_confint defaults to the Wald interval, which misbehaves near 0 and 1 and can leave [0,1]."
+  },
+
+  "recovery": {
+    "claim": "the estimates are close to the accuracy the fixture was built with",
+    "tolerance_estimate": 0.04,
+    "_note": "Tighter than the regression entries because these are simple proportions on 603 diseased and 1397 non-diseased. Binomial SE is about 0.0145 for sensitivity and 0.0080 for specificity, so 0.04 is roughly 2.8 and 5 of those. Observed misses on the generated data are 0.0007 and 0.0012."
+  },
+
+  "must_appear": {
+    "r": ["binom.confint", "wilson"],
+    "python": ["proportion_confint", "wilson"],
+    "sas": ["proc freq", "cl=wilson"],
+    "stata": ["ci proportions", "wilson"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": true },
+    "sas": { "executed": false, "reason": "no SAS engine licensed" },
+    "stata": { "executed": false, "reason": "no Stata licence" }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "diagnostic-accuracy-wilson",
+  "title": "Diagnostic accuracy with Wilson intervals",
+  "summary": "Sensitivity and specificity against a reference standard, each a single proportion with a Wilson score interval.",
+
+  "estimand": {
+    "target": ["diagnostic"],
+    "summaryMeasure": ["sensitivitySpecificity"],
+    "assignment": ["nonrandomized"],
+    "clustered": false,
+    "repeatedMeasures": false,
+    "competingEvents": false
+  },
+
+  "learn": "design.diagnostic_accuracy",
+
+  "sizing": { "calc": "dxAccuracy" },
+
+  "packages": {
+    "r": { "binom": "1.1-1.1" },
+    "python": { "statsmodels": "0.14.2", "pandas": "2.2.2", "scipy": "1.13.1", "numpy": "1.26.4" }
+  },
+
+  "pinned_defaults": [
+    "R: methods = 'wilson'. binom.confint DEFAULTS TO 'all' and returns eleven intervals, so a caller omitting it reports whichever row they happen to index.",
+    "Python: method='wilson'. proportion_confint defaults to 'normal', the Wald interval, which degrades near 0 and 1 and can run outside [0, 1].",
+    "SAS: binomial(cl=wilson) with an explicit level=, since PROC FREQ orders levels alphanumerically and would otherwise report the wrong cell.",
+    "Stata: wilson requested explicitly; ci proportions defaults to an exact Clopper-Pearson interval, a different and more conservative one."
+  ],
+
+  "_wilson_only_for_single_proportions": "This interval belongs to a single proportion or rate and nowhere else. Attaching Wilson or Clopper-Pearson to an adjusted model estimate, an odds ratio or a hazard ratio is wrong; those take profile-likelihood or Wald intervals, and bootstrapped quantities take percentile or bias-corrected ones.",
+
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+}
