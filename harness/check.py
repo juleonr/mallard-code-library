@@ -53,7 +53,16 @@ def parse_harness_block(stdout: str) -> dict:
 
 
 def compare(results: dict, expected: dict) -> list:
-    """Return a list of findings. Empty means both claims hold."""
+    """Return a list of findings. Empty means both claims hold.
+
+    FIELDS ARE DERIVED, NEVER ENUMERATED. An earlier version of this function hardcoded
+    exposure_log_or, covariate_beta and exposure_se. The second entry added to this library
+    reports exposure_log_rr, which matched none of them, so the harness compared NOTHING for the
+    primary estimate and would have reported both claims as holding. A check that quietly asserts
+    its own scope is the exact failure this library was built to catch, committed inside the
+    checker. Agreement now covers every numeric key two engines both emitted; recovery covers
+    every numeric key `truth` states, whatever any of them happen to be called.
+    """
     findings = []
     langs = sorted(results)
 
@@ -65,33 +74,46 @@ def compare(results: dict, expected: dict) -> list:
         findings.append(
             f"NOTE only one engine executed ({langs[0]}); the agreement claim was not tested")
 
-    # --- agreement ---
     agree = expected.get("agreement", {})
-    tol_lor = float(agree.get("tolerance_log_or", 1e-6))
+    tol_est = float(agree.get("tolerance_estimate", 1e-6))
     tol_se = float(agree.get("tolerance_se", 1e-5))
-    fields = [("exposure_log_or", tol_lor), ("covariate_beta", tol_lor), ("exposure_se", tol_se)]
 
-    for field, tol in fields:
-        present = {l: results[l][field] for l in langs if field in results[l]}
+    # --- agreement: every numeric key at least two engines both reported ---
+    keys = sorted({k for l in langs for k, v in results[l].items() if isinstance(v, float)})
+    compared = 0
+    for field in keys:
+        present = {l: results[l][field] for l in langs
+                   if isinstance(results[l].get(field), float)}
         if len(present) < 2:
             continue
+        compared += 1
+        tol = tol_se if field.endswith("_se") else tol_est
         lo, hi = min(present.values()), max(present.values())
         if abs(hi - lo) > tol:
             spread = ", ".join(f"{l}={v:.10f}" for l, v in sorted(present.items()))
             findings.append(
                 f"AGREEMENT {field}: spread {abs(hi - lo):.3e} exceeds {tol:.0e} -- {spread}. "
                 f"On identical rows this is a package default, not rounding.")
+    if len(langs) >= 2 and compared == 0:
+        findings.append(
+            "two engines ran but shared NO field, so the agreement claim covered nothing. "
+            "Every implementation of an entry must emit the same harness keys.")
 
-    # --- recovery ---
+    # --- recovery: every numeric key the fixture states a truth for ---
     truth = expected.get("truth", {})
-    rec_tol = float(expected.get("recovery", {}).get("tolerance_log_or", 0.5))
-    for field in ("exposure_log_or", "covariate_beta"):
-        if field not in truth:
+    rec_tol = float(expected.get("recovery", {}).get("tolerance_estimate", 0.5))
+    for field, want_raw in truth.items():
+        if isinstance(want_raw, bool) or not isinstance(want_raw, (int, float)):
             continue
-        for lang in langs:
-            if field not in results[lang]:
-                continue
-            got, want = results[lang][field], float(truth[field])
+        seen_in = [l for l in langs if isinstance(results[l].get(field), float)]
+        if not seen_in:
+            # A truth key no engine reports is either a derived convenience value (an odds ratio
+            # printed beside the log odds ratio) or a typo. Named either way: a silently skipped
+            # check and a passing one look identical from outside.
+            findings.append(f"NOTE truth names {field!r} but no engine reported it; not checked")
+            continue
+        for lang in seen_in:
+            got, want = results[lang][field], float(want_raw)
             if abs(got - want) > rec_tol:
                 findings.append(
                     f"RECOVERY {field} in {lang}: got {got:.6f}, fixture used {want:.6f}, "

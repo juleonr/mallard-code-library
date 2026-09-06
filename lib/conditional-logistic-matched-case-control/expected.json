@@ -33,14 +33,14 @@
 
   "agreement": {
     "claim": "every EXECUTED language reproduces the same estimates on identical rows",
-    "tolerance_log_or": 1e-06,
+    "tolerance_estimate": 1e-06,
     "tolerance_se": 1e-05,
     "_note": "1e-6 on the log-OR is far below any real effect and far above optimiser noise. A miss at this scale is a different model or a different default, never rounding."
   },
 
   "recovery": {
     "claim": "the estimate is close to the parameter the fixture actually used",
-    "tolerance_log_or": 0.45,
+    "tolerance_estimate": 0.45,
     "_note": [
       "PROVISIONAL, and deliberately marked so. 0.45 is roughly three standard errors under a",
       "back-of-envelope SE of about 0.15 for 400 matched sets at 35% exposure. Nothing here has run",

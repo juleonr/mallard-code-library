@@ -1,0 +1,42 @@
+{
+  "method": "modified-poisson-adjusted-risk-ratio",
+  "fixture": "fixture.csv",
+
+  "_why_two_claims": "AGREEMENT asks whether the engines compute the same thing; RECOVERY asks whether they compute the right thing. Agreement alone passes identical mistakes. Recovery alone passes a default mismatch smaller than sampling error.",
+
+  "_why_not_self_generated": "Expected values are not recorded from running this code. The fixture draws the outcome from a LOG-LINK risk model, which is exactly the parameter modified Poisson targets, so the truth is a property of the data rather than of any implementation.",
+
+  "truth": {
+    "source": "the fixture's data-generating process",
+    "exposure_log_rr": 0.4054651081081644,
+    "exposure_rr": 1.5,
+    "covariate_beta": 0.2
+  },
+
+  "agreement": {
+    "claim": "every executed engine reproduces the same estimates AND the same HC0 robust standard error",
+    "tolerance_estimate": 1e-06,
+    "tolerance_se": 1e-05,
+    "_note": "The SE tolerance is the point of this entry. sandwich::vcovHC defaults to HC3 and statsmodels GLM defaults to the nonrobust model-based covariance, so two files that both look like Zou's method can report different intervals. Both are pinned to HC0 and this check is what holds them there."
+  },
+
+  "recovery": {
+    "claim": "the estimate is close to the risk ratio the fixture used",
+    "tolerance_estimate": 0.12,
+    "_note": "PROVISIONAL. Roughly three standard errors under a rough SE of about 0.04 for 3000 rows at 12% event rate. Nothing has run the model. Reset this against the observed SE on the first green run."
+  },
+
+  "must_appear": {
+    "r": ["glm(", "poisson(link", "vcovHC"],
+    "python": ["Poisson", "cov_type"],
+    "sas": ["proc genmod", "dist=poisson", "repeated"],
+    "stata": ["glm", "family(poisson)"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": true },
+    "sas": { "executed": false, "reason": "no SAS engine licensed" },
+    "stata": { "executed": false, "reason": "no Stata licence; and vce(robust) applies a finite-sample correction, so its SE would need its own tolerance rather than HC0's" }
+  }
+}
