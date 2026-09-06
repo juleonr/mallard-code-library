@@ -1,0 +1,54 @@
+{
+  "method": "mixed-effects-logistic-clustered",
+  "fixture": "fixture.csv",
+
+  "_agreement_is_untested_here_and_that_is_the_honest_answer": [
+    "There is NO python.py in this entry, and its absence is deliberate rather than pending.",
+    "The standard Python stack has no frequentist GLMM equivalent to lme4::glmer. The candidates",
+    "and why each was rejected:",
+    "  statsmodels BinomialBayesMixedGLM - variational Bayes, a different estimator targeting a",
+    "    different thing; agreement with glmer would be meaningless either way.",
+    "  statsmodels GEE - a POPULATION-AVERAGE model. On this fixture it targets an attenuated",
+    "    quantity, not the same number by another route. Substituting it would silently swap the",
+    "    estimand and the agreement check would then be comparing two different parameters and",
+    "    calling the gap a defect.",
+    "  pymer4 - wraps lme4 through rpy2, so it IS R. Two calls to the same engine agreeing is not",
+    "    independent evidence.",
+    "So this entry makes the RECOVERY claim only. harness/check.py refuses to state the agreement",
+    "claim with fewer than two engines, which is exactly the behaviour wanted: the weaker guarantee",
+    "is reported as weaker rather than dressed up."
+  ],
+
+  "_why_not_self_generated": "The outcome is drawn from logit(p) = b0 + b1*exposed + u_j with u_j normal, which IS the random-intercept model glmer fits, so b1 is the cluster-conditional log odds ratio by construction.",
+
+  "truth": {
+    "source": "the fixture's data-generating process",
+    "conditional_log_or": 0.6931471805599453,
+    "cluster_sd": 0.8
+  },
+
+  "agreement": {
+    "claim": "NOT TESTED: one executed engine. See the note above.",
+    "tolerance_estimate": 0.0001,
+    "tolerance_se": 0.0001
+  },
+
+  "recovery": {
+    "claim": "the estimate is close to the CLUSTER-CONDITIONAL odds ratio the fixture used",
+    "tolerance_estimate": 0.45,
+    "_note": "PROVISIONAL. With exposure allocated at the cluster level the effective sample size is 40 clusters, not 1200 people, so the SE is far larger than the row count suggests: roughly 0.15 by rough calculation. 0.45 is about three of those. The first run reports the real number and this is reset from it, as the other entries were. The crude MARGINAL odds ratio in this data is 1.379 against a true conditional 2.000, so a tolerance much wider than this would stop distinguishing the two estimands, which is the one thing this entry must not do."
+  },
+
+  "must_appear": {
+    "r": ["glmer(", "(1 | cluster)", "nAGQ"],
+    "sas": ["proc glimmix", "method=quad", "random intercept"],
+    "stata": ["melogit", "intpoints"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": false, "reason": "no frequentist GLMM in the standard Python stack; GEE would answer a different question and pymer4 is R" },
+    "sas": { "executed": false, "reason": "no SAS engine licensed" },
+    "stata": { "executed": false, "reason": "no Stata licence" }
+  }
+}

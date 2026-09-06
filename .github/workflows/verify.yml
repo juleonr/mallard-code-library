@@ -87,9 +87,29 @@ jobs:
                 echo "PYTHON FAILED"; cat "/tmp/$name.py.txt"; fail=1
               fi
             fi
-            python harness/check.py --entry "$entry" "${args[@]}" || fail=1
+            python harness/check.py --entry "$entry" "${args[@]}" | tee -a /tmp/all.txt || fail=1
             echo "::endgroup::"
           done
+
+          # A ROLLUP, so a weaker guarantee is VISIBLE and not merely non-fatal. An entry with one
+          # executed engine passes correctly -- its recovery claim holds -- but it has not tested
+          # agreement, and nothing in an exit code says so. mixed-effects-logistic is the standing
+          # case: Python has no frequentist GLMM, and substituting GEE would swap the estimand.
+          echo "### Library verification" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| entry | engines | agreement | result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo ""
+          echo "=== rollup ==="
+          grep '^SUMMARY|' /tmp/all.txt | while IFS='|' read -r _ name engines agreement result; do
+            printf '  %-46s %-14s agreement=%-9s %s\n' "$name" "$engines" "$agreement" "$result"
+            echo "| \`$name\` | $engines | $agreement | $result |" >> "$GITHUB_STEP_SUMMARY"
+          done
+          untested=$(grep -c '|UNTESTED|' /tmp/all.txt || true)
+          echo "  entries with the agreement claim UNTESTED: $untested"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Entries with the agreement claim untested: **$untested**" >> "$GITHUB_STEP_SUMMARY"
+
           exit $fail
 
       # The lint is a MODULE with its own controls, not inline bash. The inline version was wrong

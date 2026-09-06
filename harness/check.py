@@ -152,6 +152,14 @@ def main(argv=None) -> int:
     print(f"fixture: {fixture.name}  sha256 {fixture_digest(fixture)[:16]}")
     print(f"engines: {', '.join(sorted(results)) or 'none'}")
 
+    # A MACHINE-READABLE ROLLUP LINE, so CI can report which entries actually tested which claim.
+    # A single-engine entry passes, correctly, but its guarantee is weaker than a two-engine one
+    # and nothing downstream could see that from an exit code alone.
+    agreement = "tested" if len(results) >= 2 else "UNTESTED"
+    real_findings = [f for f in findings if not f.startswith("NOTE")]
+    print(f"SUMMARY|{entry.name}|{','.join(sorted(results)) or 'none'}|{agreement}|"
+          f"{'FAIL' if real_findings else 'pass'}")
+
     real = [f for f in findings if not f.startswith("NOTE")]
     for f in findings:
         print(("  " if f.startswith("NOTE") else "  FAIL ") + f)
