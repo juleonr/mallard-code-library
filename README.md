@@ -17,8 +17,17 @@ every commit, so the method skeleton a plan builds on is known to work.
 Every entry makes **two separate claims**, and conflating them would defeat the purpose.
 
 **Agreement.** Every executed language produces the same estimates from identical rows, to a
-tolerance of 1e-6 on the log scale. That tolerance is far below any real effect and far above
-optimiser noise, so a miss is a package default rather than rounding.
+tolerance of **1e-4**, which is measured rather than asserted.
+
+The first version of this README said 1e-6 and called it "far above optimiser noise". The first
+real run refuted that: `survival::clogit` and `statsmodels.ConditionalLogit` agreed to a spread of
+5.6e-6 on the log odds ratio and 1.0e-5 on the covariate, so 1e-6 sat *below* the noise floor of
+two different optimisers on the same likelihood and failed a correct pair. 1e-4 is about ten times
+the observed noise, and an HC0-versus-HC3 variance differs by roughly 4e-3, some forty times the
+tolerance, so a real default difference is still caught with room to spare.
+
+That episode is left in this README on purpose. A tolerance chosen by assertion is a check
+calibrated against nothing, and the fix was to run the thing and read the number.
 
 This is the claim the library exists for. Ask Mallard's own schema tells the model, on every plan:
 
@@ -37,6 +46,19 @@ on the same wrong model.
 Neither claim implies the other. Agreement alone passes identical mistakes; recovery alone passes a
 default mismatch smaller than sampling error. `harness/check.py` reports them separately and refuses
 to state the agreement claim at all when fewer than two engines ran.
+
+### What the first runs actually found
+
+Three real defects in three runs, none of which reading the files would have produced:
+
+1. **A dependency break.** `statsmodels 0.14.2` imports a scipy private helper that newer scipy
+   removed. pandas, numpy and statsmodels were pinned; scipy was not, so pip took the latest and
+   the import failed outright. Pinning what a file *names* while its dependencies float is not
+   pinning.
+2. **A CI step asserting its own scope.** The R install list was hardcoded to `survival`, so the
+   second entry failed with "there is no package called 'sandwich'" while its `meta.json` had
+   declared `sandwich` all along. Package lists are now derived from the entries.
+3. **A tolerance that was never measured.** See above.
 
 **What no entry claims is that your analysis is correct.** A working implementation of conditional
 logistic regression says nothing about whether conditional logistic regression answers your

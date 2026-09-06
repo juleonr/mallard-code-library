@@ -16,11 +16,26 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: "4.4.1"
-      # Versions are pinned in each entry's meta.json. Installing latest would make a green run
-      # mean "passes against whatever CRAN shipped today", which is the moving oracle this library
-      # exists to replace.
+      # PACKAGE LISTS ARE DERIVED FROM meta.json, NEVER TYPED HERE. This step used to install a
+      # hardcoded c("survival"), so adding an entry that needs sandwich failed with "there is no
+      # package called 'sandwich'" -- a CI step asserting its own scope while the entries already
+      # declared what they needed. Same defect the harness had with hardcoded field names.
+      #
+      # The repository is a DATED Posit snapshot rather than latest, which pins transitively. The
+      # scipy break on run 1 was exactly this: pinning what a file names and letting its
+      # dependencies float still leaves the environment moving, somewhere harder to see.
       - name: R packages
-        run: Rscript -e 'install.packages(c("survival"), repos = "https://cloud.r-project.org")'
+        run: |
+          set -euo pipefail
+          pkgs=$(python3 -c "
+          import json, glob
+          names = set()
+          for f in glob.glob('lib/*/meta.json'):
+              names |= set(json.load(open(f)).get('packages', {}).get('r', {}))
+          print(','.join('\"%s\"' % n for n in sorted(names)))
+          ")
+          echo "installing from meta.json: $pkgs"
+          Rscript -e "install.packages(c($pkgs), repos='https://packagemanager.posit.co/cran/__linux__/noble/2026-09-01')"
 
       - uses: actions/setup-python@v5
         with:
@@ -30,8 +45,19 @@ jobs:
       # removed, so pip resolving scipy to latest broke the import outright. Pinning the packages
       # a file names while letting their transitive dependencies float is not pinning: the
       # environment still moves, just somewhere harder to see.
+      # Derived from meta.json for the same reason, versions included.
       - name: Python packages
-        run: pip install "pandas==2.2.2" "numpy==1.26.4" "scipy==1.13.1" "statsmodels==0.14.2"
+        run: |
+          set -euo pipefail
+          specs=$(python3 -c "
+          import json, glob
+          out = {}
+          for f in glob.glob('lib/*/meta.json'):
+              out.update(json.load(open(f)).get('packages', {}).get('python', {}))
+          print(' '.join(f'{k}=={v}' for k, v in sorted(out.items())))
+          ")
+          echo "installing from meta.json: $specs"
+          pip install $specs
 
       - name: Run every entry and check both claims
         run: |

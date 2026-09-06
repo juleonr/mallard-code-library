@@ -2,7 +2,6 @@
   "method": "conditional-logistic-matched-case-control",
   "fixture": "fixture.csv",
   "fixture_sha256": "computed by the harness at run time, so a silently edited fixture fails loudly",
-
   "_why_two_claims": [
     "AGREEMENT and RECOVERY are different claims and the library makes both, separately.",
     "Agreement asks whether the four implementations compute the same thing. It is tight, because",
@@ -14,7 +13,6 @@
     "Agreement alone would pass four identical mistakes. Recovery alone would pass a default mismatch",
     "smaller than sampling error. Neither is sufficient and this is why."
   ],
-
   "_why_not_self_generated": [
     "expected values are NOT produced by running this library's own code and recording the output.",
     "That is the golden-file trap this project has already documented: a golden regenerated from the",
@@ -23,45 +21,54 @@
     "within each matched set with probability proportional to exp(b1*x1 + b2*x2), which IS the",
     "conditional likelihood clogit maximises, so the true betas are the model's own parameters."
   ],
-
   "truth": {
     "source": "the fixture's data-generating process, not any implementation of the analysis",
     "exposure_log_or": 0.6931471805599453,
     "exposure_or": 2.0,
     "covariate_beta": 0.4
   },
-
   "agreement": {
     "claim": "every EXECUTED language reproduces the same estimates on identical rows",
-    "tolerance_estimate": 1e-06,
-    "tolerance_se": 1e-05,
-    "_note": "1e-6 on the log-OR is far below any real effect and far above optimiser noise. A miss at this scale is a different model or a different default, never rounding."
+    "tolerance_estimate": 0.0001,
+    "tolerance_se": 0.0001,
+    "_note": "MEASURED, not asserted. Run 3 (2026-09-06) put survival::clogit and statsmodels ConditionalLogit at a spread of 5.6e-6 on the log-OR, 1.0e-5 on the covariate and 1.1e-7 on the SE. The original 1e-6 was BELOW that and failed a correct pair; the README claimed 1e-6 was 'far above optimiser noise' and the run refuted it. 1e-4 sits about 10x above the observed noise of two different optimisers on the same likelihood, and well below any real default difference: an HC0-vs-HC3 variance differs by ~4e-3, a wrong reference level flips the sign. Two independent implementations agreeing to five significant figures is the result here; the red X was the tolerance."
   },
-
   "recovery": {
     "claim": "the estimate is close to the parameter the fixture actually used",
-    "tolerance_estimate": 0.45,
-    "_note": [
-      "PROVISIONAL, and deliberately marked so. 0.45 is roughly three standard errors under a",
-      "back-of-envelope SE of about 0.15 for 400 matched sets at 35% exposure. Nothing here has run",
-      "the model, so the real SE is unmeasured. The FIRST CI run must report the observed standard",
-      "error and this tolerance must then be reset to a stated multiple of it. Leaving a guessed",
-      "tolerance in place would be a check calibrated against nothing."
-    ]
+    "tolerance_estimate": 0.4,
+    "_note": "MEASURED. Observed SE 0.1304 (run 3), against the 0.15 guessed before anything ran. 0.40 is about three of those. Observed miss was 0.0397, or 0.30 SE."
   },
-
   "must_appear": {
     "_note": "call sites codecheck.js can look for. Presence is not correctness: crr( being called says a competing-risks function was called, not that the right variable reached it.",
-    "r": ["clogit(", "strata("],
-    "python": ["ConditionalLogit"],
-    "sas": ["proc logistic", "strata"],
-    "stata": ["clogit"]
+    "r": [
+      "clogit(",
+      "strata("
+    ],
+    "python": [
+      "ConditionalLogit"
+    ],
+    "sas": [
+      "proc logistic",
+      "strata"
+    ],
+    "stata": [
+      "clogit"
+    ]
   },
-
   "engines": {
-    "r": { "executed": true },
-    "python": { "executed": true },
-    "sas": { "executed": false, "reason": "no SAS engine licensed yet; see repository README on Altair SLC, which is SAS-language-compatible rather than SAS itself" },
-    "stata": { "executed": false, "reason": "no Stata licence yet; the AEA Data Editor CI pattern applies once one exists" }
+    "r": {
+      "executed": true
+    },
+    "python": {
+      "executed": true
+    },
+    "sas": {
+      "executed": false,
+      "reason": "no SAS engine licensed yet; see repository README on Altair SLC, which is SAS-language-compatible rather than SAS itself"
+    },
+    "stata": {
+      "executed": false,
+      "reason": "no Stata licence yet; the AEA Data Editor CI pattern applies once one exists"
+    }
   }
 }
