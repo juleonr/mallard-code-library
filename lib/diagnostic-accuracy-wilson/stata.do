@@ -18,9 +18,17 @@ ci proportions test if disease == 1, wilson
 generate byte negtest = (test == 0)
 ci proportions negtest if disease == 0, wilson
 
-* AND THE INTERVAL HAS TO BE BUILT ON SPECIFICITY ITSELF, not recovered from the false-positive
-* rate afterwards. The Wilson interval is asymmetric about the point estimate, so complementing the
-* bounds of an interval for 1 - p does not give the interval for p. Estimating the right proportion
-* is what makes the bounds right, not just the point estimate.
+* A CORRECTION TO AN EARLIER VERSION OF THIS COMMENT. It claimed the interval had to be built on
+* specificity because "the Wilson interval is asymmetric, so complementing its bounds does not give
+* specificity's". That is FALSE, and a cross-lab reviewer caught it. The Wilson interval IS
+* equivariant under complementation: its centre is (x + z^2/2)/(n + z^2), which maps to 1 - centre
+* when x -> n - x, and its half-width depends on x only through x(n-x)/n, which is unchanged. So
+* CI(1-p) = [1 - U(p), 1 - L(p)] exactly, boundary cases included. Verified numerically at
+* 9/10, 1/10, 50/100, 603/2000, 0/20, 20/20 and 3/7.
+*
+* The reason to estimate specificity directly is therefore simpler and is about the REPORT, not the
+* arithmetic: the old code printed the false-positive rate under the label "specificity". A reader
+* comparing it with the R and Python output sees 0.10 where they see 0.90. Complementing by hand
+* afterwards would give the right numbers, and would be one more step for a reader to get wrong.
 
 * diagt gives the full accuracy table if the user has installed it (ssc install diagt).
