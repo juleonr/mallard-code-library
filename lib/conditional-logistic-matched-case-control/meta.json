@@ -18,7 +18,7 @@
     "repeatedMeasures": false,
     "competingEvents": false
   },
-  "learn": "design.case_control",
+  "learn": "design.matched_case_control",
   "sizing": {
     "calc": "none",
     "_why": "A matched or nested case-control has NO form in Mallard's sizing catalog and must not borrow one. This is a hard rule under Statistical correctness: a live brief chose calc 'paired' while its own note correctly cited Dupont 1988 and said this is not an unmatched two-proportion formula. 'paired' is a continuous mean-difference formula. The honest route is 'none' plus the discordant-set method named in prose. epiR::epi.sscc is the reference for anyone with R who wants to implement Dupont properly."
