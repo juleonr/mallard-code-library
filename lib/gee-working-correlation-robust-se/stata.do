@@ -11,9 +11,15 @@
 *
 * vce(robust) is NOT Stata's default. xtgee reports the MODEL-BASED standard error unless asked,
 * while geeglm's summary, statsmodels' .bse and GENMOD's REPEATED table all report the sandwich.
-* On this fixture the two differ by 78%, so the same estimate carries an interval 44% too narrow.
-* This is the direction that matters: the model-based error is the SMALLER one, so the mistake
-* makes a result look more certain than it is rather than less.
+* The model-based error is the SMALLER one, so the mistake makes a result look more certain than it
+* is rather than less.
+*
+* HOW MUCH SMALLER DEPENDS ON THE WORKING CORRELATION, and the two defaults interact. Stata's own
+* pair -- exchangeable structure, model-based variance -- is the mild case, because a model-based
+* variance computed under the right correlation already carries most of it. The severe case is
+* INDEPENDENCE with a model-based error, which is what you get by taking R's default structure and
+* Stata's default variance. No package defaults to that pair; a file translated between them does.
+* README.md carries both ratios as measured on this fixture.
 
 import delimited "fixture.csv", clear
 

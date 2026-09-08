@@ -42,15 +42,29 @@ A default that is not written down is one release from changing.
 | SAS `REPEATED` | the **empirical** (sandwich) table |
 | Stata `xtgee` | the **model-based** error, unless `vce(robust)` |
 
-On the committed fixture the sandwich standard error for the exposure coefficient is **0.1685** and
-the model-based one is **0.0944** — a ratio of **1.785**. A confidence interval built on the
-model-based error is **44% too narrow**, around an identical point estimate.
-
-That is the direction that matters. The model-based error is the **smaller** one, so the mistake
-makes a result look more certain than it is. It is the same shape as the overdispersion trap in
+The model-based error is the **smaller** one, so this is the mistake that makes a result look more
+certain than it is rather than less — the same shape as the overdispersion trap in
 `poisson-rate-regression-overdispersed`: **confidently wrong rather than visibly wrong.**
 
-Both are separate harness keys, so an engine reporting one as the other fails the agreement check
+**How much smaller depends on the working correlation, and that is why this entry reports four
+standard errors rather than two.** A model-based variance computed under an EXCHANGEABLE structure
+already carries the within-clinic correlation and lands near the sandwich. One computed under
+INDEPENDENCE does not carry it at all.
+
+So the two defaults interact, and the severe case is a pair **no single package defaults to**:
+
+| | model-based SE | sandwich SE | ratio |
+|---|---|---|---|
+| exchangeable working correlation | *(from the run)* | *(from the run)* | *(from the run)* |
+| independence working correlation | *(from the run)* | *(from the run)* | *(from the run)* |
+
+Stata's own pair — exchangeable structure with a model-based variance — is the mild row. R,
+statsmodels and GENMOD default to independence with a sandwich, which is also fine. The severe row
+is independence with a model-based error: **R's default structure with Stata's default variance**,
+which is precisely what a file translated between the two produces and what nobody would write on
+purpose.
+
+All four are separate harness keys, so an engine reporting one as another fails the agreement check
 rather than passing with a plausible number.
 
 ### And a silent one in R that has nothing to do with statistics
@@ -69,9 +83,10 @@ reverses the sign of every coefficient, with no warning in the output.
 
 ## What the fixture is built to make testable
 
-**Exposure has a clinic-level component**, and this is the choice the entry turns on. Measured: with
-a clinic-level exposure spread of 0.9 the sandwich-to-model-based ratio for the exposure coefficient
-is **1.022** — the demonstration would have been a rounding difference. At 2.5 it is 1.785 on the
+**Exposure has a clinic-level component**, and this is the choice the entry turns on. Measured on a
+working-independence fit — the structure three of the four languages default to — the
+sandwich-to-model-based ratio for the exposure coefficient is **1.022** at a clinic-level exposure
+spread of 0.9: the demonstration would have been a rounding difference. At 2.5 it is 1.785 on the
 committed seed and above 1.3 on 98% of 200 calibration seeds. Some clinics prescribe far more than
 others, which is both realistic and what puts the exposure contrast between clusters where the
 clustering can reach it.

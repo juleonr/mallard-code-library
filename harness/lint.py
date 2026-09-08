@@ -78,16 +78,33 @@ def lint_sas(path: Path) -> list:
     if not re.search(r"\brun\s*;", code, re.I) and not re.search(r"\bquit\s*;", code, re.I):
         problems.append(f"{path}: no run; or quit; statement, so no step is ever submitted")
 
-    # SCOPED TO PROC LOGISTIC, which is the only proc where this matters. LOGISTIC models the
-    # LOWER ordered response value by default, so a 0/1 outcome without event='1' inverts every
-    # odds ratio in the output and nothing in the listing says so. GENMOD, GLM and the rest have
-    # no such default, and requiring it of them flags correct files.
-    if re.search(r"\bproc\s+logistic\b", code, re.I):
-        for m in re.finditer(r"\bmodel\b[^;]*;", code, re.I | re.S):
-            stmt = m.group(0)
-            if "event" not in stmt.lower():
+    # THE RESPONSE-LEVEL DEFAULT, scoped to the procs that actually have it and applied PER STEP.
+    #
+    # PROC LOGISTIC models the LOWER ordered response value, so a 0/1 outcome without event='1'
+    # inverts every odds ratio and nothing in the listing says so. SO DOES PROC GENMOD WITH A
+    # BINOMIAL DISTRIBUTION, which this rule missed: its scope was written from a GENMOD dist=
+    # poisson file, where there is genuinely no such notion, and generalised to all of GENMOD.
+    # A check asserting its own idea of its scope is this project's most repeated defect and this
+    # was an instance of it -- found when the first GENMOD-binomial file arrived, which happened
+    # to set event='1' anyway, so nothing would have been caught if it had not.
+    #
+    # Per step, because the old version tested EVERY model statement in the file as soon as one
+    # PROC LOGISTIC appeared anywhere in it. A file pairing a correct LOGISTIC step with a Poisson
+    # GENMOD step was flagged for the second step's statement.
+    steps = [(m.group(1).lower(), code[m.start():])
+             for m in re.finditer(r"\bproc\s+(\w+)\b", code, re.I)]
+    for k, (name, tail) in enumerate(steps):
+        body = tail if k + 1 >= len(steps) else tail[:len(tail) - len(steps[k + 1][1])]
+        if name == "logistic":
+            why = "PROC LOGISTIC"
+        elif name == "genmod" and re.search(r"\bdist\s*=\s*bin", body, re.I):
+            why = "PROC GENMOD with a binomial distribution"
+        else:
+            continue
+        for m in re.finditer(r"\bmodel\b[^;]*;", body, re.I | re.S):
+            if "event" not in m.group(0).lower():
                 problems.append(
-                    f"{path}: PROC LOGISTIC model statement without event= -- "
+                    f"{path}: {why} model statement without event= -- "
                     f"the lower response level is modelled by default and the odds ratios invert")
     return problems
 
@@ -98,30 +115,45 @@ def strip_hash_comments(text: str, triple: bool = False) -> str:
     A plain `re.sub(r"#.*", "", ...)` would delete half of `sep = "#"` and, worse, would treat a
     `#` inside a quoted string as the start of a comment and strip the rest of the line -- the
     unanchored-pattern failure this repository keeps paying for. So this walks characters and
-    tracks quote state instead. `triple` additionally handles Python's triple-quoted strings,
-    which R does not have.
+    tracks quote state instead.
+
+    `triple` is for Python, which R does not have, and it does TWO things: it tracks triple-quoted
+    regions so a `#` inside one does not start a comment, and it DROPS their contents. Dropping
+    them is the point. A Python docstring is prose in the role a `#` comment plays in R, and the
+    first version of this function kept it -- so `must_appear` could declare an option that lived
+    only in a module docstring and pass, which is exactly the "described but not set" case the
+    check names as the more dangerous of the two. Caught by writing a Python file whose pinned
+    option appeared in its docstring and nowhere else.
+
+    A pinned string inside an ordinary single- or double-quoted literal is still CODE and is kept:
+    `cov_type='naive'` is an argument, not a description of one.
     """
     out = []
     i, n = 0, len(text)
     quote = None            # the closing delimiter we are waiting for, or None
+    drop = False            # inside a triple-quoted region, whose contents are prose
     while i < n:
         ch = text[i]
         if quote:
             if ch == "\\" and i + 1 < n:      # an escaped character cannot close the string
-                out.append(text[i:i + 2])
+                if not drop:
+                    out.append(text[i:i + 2])
                 i += 2
                 continue
             if text.startswith(quote, i):
-                out.append(quote)
+                if not drop:
+                    out.append(quote)
                 i += len(quote)
                 quote = None
+                drop = False
                 continue
-            out.append(ch)
+            if not drop:
+                out.append(ch)
             i += 1
             continue
         if triple and (text[i:i + 3] == '"""' or text[i:i + 3] == "'''"):
             quote = text[i:i + 3]
-            out.append(quote)
+            drop = True
             i += 3
             continue
         if ch == '"' or ch == "'":

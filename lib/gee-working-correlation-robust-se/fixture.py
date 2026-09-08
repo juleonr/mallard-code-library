@@ -23,10 +23,13 @@ Two further properties the fixture needs, both deliberate:
 
   EXPOSURE HAS A CLUSTER-LEVEL COMPONENT. Some clinics prescribe more than others. Without it the
   exposure contrast is essentially within-cluster and the naive-against-robust gap this entry exists
-  to show is a rounding difference: MEASURED, at CLUSTER_EXPOSURE_SD = 0.9 the sandwich-to-
-  model-based ratio for the exposure coefficient is 1.022. At 2.5 it is 1.785 on this seed and above
-  1.3 on 98% of the 200 calibration seeds. Recorded rather than asserted, because the rationale for
-  a smaller spread reads perfectly well and produces an entry that demonstrates nothing.
+  to show is a rounding difference. MEASURED, on a WORKING-INDEPENDENCE fit -- the structure R,
+  statsmodels and PROC GENMOD all default to -- the sandwich-to-model-based ratio for the exposure
+  coefficient is 1.022 at CLUSTER_EXPOSURE_SD = 0.9. At 2.5 it is 1.785 on this seed and above 1.3
+  on 98% of the 200 calibration seeds. Under an EXCHANGEABLE working correlation the same ratio is
+  much smaller, because a model-based variance computed under the right structure already carries
+  the correlation; README.md has both. Recorded rather than asserted, because the rationale for a
+  smaller spread reads perfectly well and produces an entry that demonstrates nothing.
 
   CLUSTER SIZES VARY WIDELY (8 to 40). Equal cluster sizes make working-independence and
   working-exchangeable give the SAME point estimate, so the choice of working correlation would have

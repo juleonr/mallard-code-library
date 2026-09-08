@@ -68,7 +68,46 @@ proc genmod data=rr;
     repeated subject=id / type=ind;
 run;
 ''')
-        check("PROC GENMOD is NOT asked for event=", lint_sas(genmod) == [], lint_sas(genmod))
+        check("PROC GENMOD with dist=poisson is NOT asked for event=",
+              lint_sas(genmod) == [], lint_sas(genmod))
+
+        # BUT A BINOMIAL GENMOD HAS EXACTLY THE SAME DEFAULT, and the rule used to exempt it: its
+        # scope was written from the Poisson file above and generalised to all of GENMOD. Found
+        # 2026-09-08 when the first GENMOD-binomial file arrived; it set event='1' anyway, so
+        # nothing would have caught it if it had not.
+        genmod_bin_bad = write(tmp, "genmod_bin_bad.sas", '''proc genmod data=d;
+    class clinic;
+    model outcome = exposed x / dist=binomial link=logit;
+    repeated subject=clinic / type=exch;
+run;
+''')
+        check("PROC GENMOD with dist=binomial and no event= IS flagged",
+              len(lint_sas(genmod_bin_bad)) == 1, lint_sas(genmod_bin_bad))
+        check("and the finding names GENMOD rather than LOGISTIC",
+              "GENMOD" in (lint_sas(genmod_bin_bad) or [""])[0])
+
+        genmod_bin_ok = write(tmp, "genmod_bin_ok.sas", '''proc genmod data=d;
+    class clinic;
+    model outcome(event=\'1\') = exposed x / dist=binomial link=logit;
+    repeated subject=clinic / type=exch;
+run;
+''')
+        check("PROC GENMOD with dist=binomial and event= is not flagged",
+              lint_sas(genmod_bin_ok) == [], lint_sas(genmod_bin_ok))
+
+        # AND THE RULE IS PER STEP. The old version tested every model statement in the file as
+        # soon as one PROC LOGISTIC appeared anywhere in it, so this correct pairing was flagged
+        # for the Poisson step's statement.
+        mixed = write(tmp, "mixed.sas", '''proc logistic data=d;
+    model case(event=\'1\') = exposed;
+run;
+
+proc genmod data=d;
+    model count = exposed / dist=poisson link=log offset=logpt;
+run;
+''')
+        check("a correct LOGISTIC step beside a Poisson GENMOD step is not flagged",
+              lint_sas(mixed) == [], lint_sas(mixed))
 
         logistic_bad = write(tmp, "logistic_bad.sas", '''proc logistic data=d;
     strata set_id;
@@ -108,15 +147,37 @@ run;
         check("a real R comment IS stripped",
               "efron" not in strip_hash_comments('fit <- lm(y ~ x)  # ties = "efron"\n'))
 
+        # A PYTHON DOCSTRING IS PROSE, and is dropped. This test asserted the opposite until
+        # 2026-09-08, when a python.py declared cov_struct=Exchangeable() in must_appear, wrote it
+        # in its module docstring, called the constructor a different way in the code, and PASSED.
+        # That is the "described but not set" case the check names as the more dangerous of the
+        # two -- available in the one language whose convention is to describe things in a string.
         py_doc = '''"""Docstring mentioning # and cov_type="HC3" in prose."""
 res = mod.fit(cov_type="HC1")
 '''
         stripped = strip_hash_comments(py_doc, triple=True)
-        check("a Python docstring is kept as string content, not eaten as a comment",
-              'cov_type="HC3"' in stripped and 'cov_type="HC1"' in stripped)
+        check("a Python docstring's contents are DROPPED, like the comment they are",
+              'cov_type="HC3"' not in stripped)
+        check("code after a docstring containing a # survives it",
+              'cov_type="HC1"' in stripped)
+        check("an ordinary Python string literal is CODE and is kept",
+              "cov_type='naive'" in strip_hash_comments(
+                  "se = fit.standard_errors(cov_type='naive')\n", triple=True))
         check("a real Python comment IS stripped",
               "HC3" not in strip_hash_comments('res = mod.fit()  # HC3 would go here\n',
                                                triple=True))
+        # BOTH DIRECTIONS on the real case: the same file, the option in the docstring only,
+        # against the same file with it in the call.
+        only_prose = '''"""Uses cov_struct=Exchangeable() throughout."""
+model = sm.GEE(y, X, groups=g, cov_struct=Independence())
+'''
+        in_code = '''"""Uses an exchangeable working correlation."""
+model = sm.GEE(y, X, groups=g, cov_struct=Exchangeable())
+'''
+        check("an option present only in the docstring is NOT code",
+              "cov_struct=Exchangeable()" not in strip_hash_comments(only_prose, triple=True))
+        check("the same option in the call IS code",
+              "cov_struct=Exchangeable()" in strip_hash_comments(in_code, triple=True))
 
         print("must_appear")
 

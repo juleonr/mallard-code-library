@@ -17,7 +17,8 @@
    modelse. With REPEATED specified, GENMOD prints the EMPIRICAL (sandwich) standard errors as its
    "Analysis Of GEE Parameter Estimates" table. modelse adds the model-based table beside it, which
    is what Stata prints by default -- this entry needs both, because the gap between them is its
-   subject.
+   subject, and it needs them under BOTH working correlations because the size of that gap depends
+   on which structure produced it.
 
    corrw prints the estimated working correlation matrix, so alpha is visible rather than implied. */
 
