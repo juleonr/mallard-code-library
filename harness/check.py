@@ -101,7 +101,24 @@ def compare(results: dict, expected: dict) -> list:
 
     # --- recovery: every numeric key the fixture states a truth for ---
     truth = expected.get("truth", {})
-    rec_tol = float(expected.get("recovery", {}).get("tolerance_estimate", 0.5))
+    recovery = expected.get("recovery", {})
+    rec_tol = float(recovery.get("tolerance_estimate", 0.5))
+    # PER-KEY TOLERANCES, because one number cannot serve two parameters measured on different
+    # scales. mixed-effects-logistic-clustered is the case: with exposure allocated at the cluster
+    # level its conditional log odds ratio needs a tolerance of 0.90 to cover the real sampling
+    # distribution, and applying that same 0.90 to the between-cluster SD -- whose whole miss
+    # distribution tops out at 0.40 -- would make that check pass whatever it was handed.
+    by_key = recovery.get("tolerance_by_key") or {}
+    if not isinstance(by_key, dict):
+        findings.append("recovery.tolerance_by_key is not an object; it was ignored")
+        by_key = {}
+    # A KEY THAT MATCHES NOTHING IS NAMED. A typo here would silently apply no tolerance at all
+    # and read exactly like a check that passed -- the same shape as the hardcoded field names
+    # this function's docstring records.
+    for named in sorted(set(by_key) - set(truth)):
+        findings.append(
+            f"recovery.tolerance_by_key names {named!r}, which truth does not; "
+            f"it constrains nothing and is probably a typo")
     for field, want_raw in truth.items():
         if isinstance(want_raw, bool) or not isinstance(want_raw, (int, float)):
             continue
@@ -112,12 +129,13 @@ def compare(results: dict, expected: dict) -> list:
             # check and a passing one look identical from outside.
             findings.append(f"NOTE truth names {field!r} but no engine reported it; not checked")
             continue
+        tol = float(by_key.get(field, rec_tol))
         for lang in seen_in:
             got, want = results[lang][field], float(want_raw)
-            if abs(got - want) > rec_tol:
+            if abs(got - want) > tol:
                 findings.append(
                     f"RECOVERY {field} in {lang}: got {got:.6f}, fixture used {want:.6f}, "
-                    f"off by {abs(got - want):.6f} > {rec_tol}. The model fitted may not be the "
+                    f"off by {abs(got - want):.6f} > {tol}. The model fitted may not be the "
                     f"model the fixture generated.")
     return findings
 

@@ -118,7 +118,12 @@ jobs:
       # exist. Inline CI bash is unreviewed code -- nothing runs it but the runner and nothing
       # tests it at all. harness/lint.test.py carries a negative control for each of those two
       # false positives, built from the exact text that tripped them.
-      - name: Lint the languages that cannot be executed
+      # THE COMPARATOR HAS CONTROLS NOW TOO. check.py decides both claims for every entry and had
+      # none, while its own docstring recorded the time it compared nothing for a primary estimate
+      # and reported both claims as holding. It runs FIRST: a broken comparator makes every entry
+      # result above meaningless, and finding that out after them reads the wrong way round.
+      - name: Controls for the harness itself
         run: |
+          python harness/check.test.py
           python harness/lint.test.py
           python harness/lint.py --root lib
