@@ -1,0 +1,43 @@
+{
+  "method": "poisson-rate-regression-overdispersed",
+  "fixture": "fixture.csv",
+
+  "_why_not_self_generated": "Counts are drawn from a gamma-Poisson mixture -- expected count person_time * exp(Xb) times a gamma frailty with mean 1 and variance 0.5 -- which IS the negative binomial (NB2) model. So the generator's coefficients are the parameters both regressions estimate, and the generator's gamma variance of 0.5 is exactly the alpha the negative binomial should recover. The Poisson coefficients stay consistent under overdispersion; only their model-based standard errors go wrong, which is why both standard errors are compared.",
+
+  "truth": {
+    "source": "the fixture's data-generating process",
+    "exposure_log_rr": 0.4700036292,
+    "nb_exposure_log_rr": 0.4700036292,
+    "covariate_beta": 0.3,
+    "nb_alpha": 0.5
+  },
+
+  "agreement": {
+    "claim": "both engines report the same rate ratio, the same robust and model-based standard errors, and the same negative binomial fit on identical rows",
+    "tolerance_estimate": 0.0001,
+    "tolerance_se": 0.0001,
+    "_note": "THE OFFSET AND THE VARIANCE ASSUMPTION ARE WHAT THIS CHECKS. An engine that dropped the offset would estimate events per patient rather than per person-year and miss by far more than the tolerance; an engine reporting model-based errors as robust would differ on exposure_se while agreeing on exposure_log_rr, which is precisely the failure the two keys exist to separate.",
+    "_the_nb_keys_are_the_ones_to_watch": "nb_exposure_log_rr and nb_alpha come from two independent optimisers maximising the same likelihood -- MASS::glm.nb and statsmodels' NegativeBinomial -- rather than from a closed form. This library has already measured that kind of pair: survival::clogit and statsmodels.ConditionalLogit agreed to 5.6e-6, which is why the tolerance is 1e-4 and not 1e-6. The dispersion is the parameter most likely to sit at the edge of that. It is compared anyway. A cross-language check whose keys are chosen to avoid the awkward ones is calibrated against nothing, and a disagreement here would be worth knowing rather than worth avoiding."
+  },
+
+  "recovery": {
+    "claim": "the estimated rate ratio is close to the one the fixture used",
+    "tolerance_estimate": 0.2,
+    "_calibration": "MEASURED over 300 alternative seeds of this generator, using the CRUDE log rate ratio -- total events over total person-time in each arm -- which needs no model and no scientific stack. |crude log RR - log 1.6| had a median of 0.0315, a 95th percentile of 0.0872 and a maximum of 0.1651, so none of the 300 exceeded 0.2. The committed fixture's crude miss is 0.0391. The crude estimator is an APPROXIMATION to the adjusted one's variability: the log link is collapsible and the covariate is independent of exposure, so both estimate the same parameter, and adjustment can only reduce the variance. The tolerance is therefore if anything looser than the adjusted estimator needs, which is stated rather than left to be assumed.",
+    "_alpha_is_held_to_the_same_number_and_that_is_generous": "nb_alpha has a true value of 0.5 and a tolerance of 0.2, which is 40% of it. The harness applies one recovery tolerance to every truth key. A dispersion estimate off by 0.2 would still be caught as a gross error -- reading theta as alpha would give 2.0, four times the truth -- which is the mistake this entry documents."
+  },
+
+  "must_appear": {
+    "r": ["glm(", "offset(log(person_time))", "poisson", "vcovHC", "glm.nb("],
+    "python": ["families.Poisson", "offset=offset", "cov_type=", "HC0", "NegativeBinomial"],
+    "sas": ["proc genmod", "offset=log_pt", "dist=poisson", "repeated subject=id"],
+    "stata": ["poisson events exposed covariate, exposure(person_time) vce(robust)", "nbreg"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": true },
+    "sas": { "executed": false, "reason": "no SAS engine licensed" },
+    "stata": { "executed": false, "reason": "no Stata licence" }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "poisson-rate-regression-overdispersed",
+  "title": "Rate regression on overdispersed counts with unequal follow-up",
+  "summary": "Estimates an incidence rate ratio from counts with an offset for person-time, with standard errors that survive overdispersion.",
+
+  "estimand": {
+    "target": ["causal", "associational"],
+    "summaryMeasure": ["rateRatio"],
+    "assignment": ["randomized", "nonrandomized"],
+    "clustered": false,
+    "repeatedMeasures": false,
+    "competingEvents": false
+  },
+
+  "learn": "analysis.count_regression",
+
+  "sizing": { "calc": "twoProportions" },
+
+  "_clustering_is_a_different_entry": "clustered is false above. A robust sandwich standard error here corrects for the variance not matching the mean and still assumes patients are INDEPENDENT. Where patients share a ward or clinic, or where one patient contributes several rows, the correction has to be BY CLUSTER and this entry must not be routed to such a plan.",
+
+  "packages": {
+    "r": { "sandwich": "3.1-0", "lmtest": "0.9-40", "MASS": "7.3-60.2" },
+    "python": { "statsmodels": "0.14.2", "pandas": "2.2.2", "numpy": "1.26.4", "scipy": "1.13.1" }
+  },
+
+  "pinned_defaults": [
+    "R: offset(log(person_time)) INSIDE the formula, which fixes the coefficient at 1. Writing + log(person_time) instead estimates it, and the model runs.",
+    "Python: offset=np.log(person_time), already logged, the same convention as R and SAS.",
+    "SAS: offset=log_pt, a variable that must ALREADY be logged; the data step does it explicitly.",
+    "Stata: exposure(person_time) -- STATA IS THE ODD ONE OUT. exposure() takes the person-time itself and logs it; offset() takes the log. A file translated from any of the other three by swapping the keyword fits exp(person_time) where person_time belongs, runs, converges and answers a different question.",
+    "R: vcovHC(type = \"HC0\"). Python: cov_type=\"HC0\". Stata: vce(robust). SAS: a REPEATED statement with type=ind, which is what asks GENMOD for empirical rather than model-based errors.",
+    "The negative binomial dispersion is reported as ALPHA in every file. R's glm.nb reports THETA, which is its reciprocal, and the R file converts rather than emitting a differently scaled number under the same name."
+  ],
+
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+}
