@@ -1,0 +1,41 @@
+{
+  "method": "welch-two-sample-t-test",
+  "fixture": "fixture.csv",
+
+  "_why_not_self_generated": "Both arms are drawn from normal distributions with stated means, so the difference the fixture used IS the parameter either test estimates. The two tests differ only in the standard error they attach to it, which is why the standard errors are compared as well as the estimate: an implementation running the pooled test recovers the right difference and reports it with an interval a third too narrow.",
+
+  "truth": {
+    "source": "the fixture's data-generating process",
+    "mean_difference": 1.0,
+    "mean_treated": 11.0,
+    "mean_control": 10.0
+  },
+
+  "agreement": {
+    "claim": "both engines report the same difference, the same Welch and pooled standard errors, and the same degrees of freedom on identical rows",
+    "tolerance_estimate": 0.0001,
+    "tolerance_se": 0.0001,
+    "_note": "THE POOLED-VERSUS-WELCH GAP IS WHAT THIS CHECKS, and it is enormous rather than marginal: 0.175259 against 0.256276, a gap of 8.1e-2 or eight hundred times the tolerance. The degrees of freedom separate further still, 1598 against 442. An engine that silently ran the pooled test could not hide in the rounding."
+  },
+
+  "recovery": {
+    "claim": "the estimated difference is close to the difference the fixture used",
+    "tolerance_estimate": 0.8,
+    "_calibration": "MEASURED over 300 alternative seeds of this generator: |estimate - 1.0| had a median of 0.1701, a 95th percentile of 0.5125 and a maximum of 0.7016, so none of the 300 exceeded 0.8. The committed seed's miss is 0.0183.",
+    "_this_is_the_weaker_of_the_two_claims_here_and_why": "A tolerance of 0.8 on a true difference of 1.0 would pass an estimate of 0.3. That is not slack in the check, it is the comparison: the treated arm has a standard deviation five times the effect and 400 patients, so no sample of this size pins the difference tightly. Recovery still catches a sign error, a swapped pair of arms or a wrong scale. What carries this entry is the agreement claim, whose margin is eight hundred times its tolerance."
+  },
+
+  "must_appear": {
+    "r": ["t.test(", "var.equal = FALSE"],
+    "python": ["ttest_ind", "equal_var=False"],
+    "sas": ["proc ttest", "class arm"],
+    "stata": ["ttest y, by(arm) unequal"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": true },
+    "sas": { "executed": false, "reason": "no SAS engine licensed" },
+    "stata": { "executed": false, "reason": "no Stata licence" }
+  }
+}
