@@ -1,0 +1,43 @@
+{
+  "method": "kaplan-meier-logrank",
+  "fixture": "fixture.csv",
+
+  "_why_not_self_generated": "Survival times are drawn from an exponential model whose hazard is baseline*exp(Xb), so the survival function is exp(-rate*t) in closed form and the truth below is arithmetic rather than a recording of what this code produced. exp(-0.06*12) and exp(-0.06*1.8*12) are the two survival probabilities at twelve months.",
+
+  "truth": {
+    "source": "the fixture's data-generating process, in closed form",
+    "surv_unexposed_12": 0.4867522560,
+    "surv_exposed_12": 0.2736238394
+  },
+
+  "_why_the_medians_are_not_in_truth": "One recovery tolerance covers every truth key, and a survival PROBABILITY and a median in MONTHS are on scales two orders apart -- sized for the medians it would be vacuous on the probabilities, and sized for the probabilities it would reject every median. The medians are still compared BETWEEN engines, where both compute the same step function and must agree exactly. The 2x2 entry carries the same limitation and the same note; per-key tolerances would be the real fix and are a change to the shared harness.",
+
+  "agreement": {
+    "claim": "both engines report the same medians, the same survival at twelve months, the same log-log interval and the same log-rank statistic on identical rows",
+    "tolerance_estimate": 0.0001,
+    "tolerance_se": 0.0001,
+    "_note": "THE MEDIANS AND THE STEP VALUES SHOULD AGREE EXACTLY, not approximately: both engines evaluate the same step function on the same rows, so any difference at all is a convention difference rather than arithmetic. 607 of the 656 events share a time with another, which is what makes the step heights depend on handling ties consistently.",
+    "_the_interval_keys_are_the_ones_to_watch": "ci_lower_unexposed_12 and ci_upper_unexposed_12 compare R's conf.type=\"log-log\" against lifelines' exponential Greenwood. Those are the same transform, so they should agree -- but they are two independent implementations of it, and this is the first entry in the library to compare an interval rather than a point estimate. Included deliberately: a cross-language check whose keys are chosen to avoid the awkward ones is calibrated against nothing, and a disagreement here would be worth knowing."
+  },
+
+  "recovery": {
+    "claim": "the estimated survival at twelve months is close to the value the fixture's model implies",
+    "tolerance_estimate": 0.12,
+    "_calibration": "MEASURED over 200 alternative seeds of this generator with a standard-library Kaplan-Meier implementation: the worse of the two arms' misses had a median of 0.0248, a 95th percentile of 0.0552 and a maximum of 0.0853, so none exceeded 0.12. The committed seed's worse miss is 0.0275, in the UNEXPOSED arm; the exposed arm lands within 0.0004.",
+    "_the_grid_biases_this_upward_slightly": "Follow-up is rounded to the half month, which can move an event from just before twelve months to just after, so the estimator sits a little above the continuous-time truth. That is a property of recording follow-up on a grid rather than an error, and it is part of what the fixture is for."
+  },
+
+  "must_appear": {
+    "r": ["survfit(", "conf.type = \"log-log\"", "survdiff(", "rho = 0"],
+    "python": ["KaplanMeierFitter", "logrank_test", "median_survival_time_"],
+    "sas": ["proc lifetest", "conftype=loglog", "test=logrank"],
+    "stata": ["stset", "sts test exposed, logrank"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": true },
+    "sas": { "executed": false, "reason": "no SAS engine licensed" },
+    "stata": { "executed": false, "reason": "no Stata licence" }
+  }
+}

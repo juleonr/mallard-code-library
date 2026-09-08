@@ -1,0 +1,38 @@
+{
+  "id": "kaplan-meier-logrank",
+  "title": "Kaplan-Meier estimation and the log-rank test",
+  "summary": "Estimates survival curves from partially observed follow-up, and compares two of them with the test that assumes proportional hazards.",
+
+  "estimand": {
+    "target": ["causal", "associational", "descriptive"],
+    "summaryMeasure": ["other"],
+    "assignment": ["randomized", "nonrandomized"],
+    "clustered": false,
+    "repeatedMeasures": false,
+    "competingEvents": false
+  },
+
+  "learn": "analysis.kaplan_meier",
+
+  "sizing": { "calc": "logrank" },
+
+  "_competing_events_must_not_come_here": "competingEvents is false above, and this is the entry where it matters most. Where death competes with the event of interest, a Kaplan-Meier curve is not merely off-message: it CENSORS the competing death and so overstates cumulative incidence. The cumulative incidence function is the estimator for that, and a plan typing competingEvents true must not be routed here.",
+
+  "_this_estimates_no_effect_measure": "summaryMeasure is `other` because Kaplan-Meier estimates a CURVE and the log-rank returns a test, not an effect. Neither produces a hazard ratio: that is the Cox entry. A plan that needs a number to report needs one of those, and quoting a log-rank p beside no estimate is the shape this entry must not encourage.",
+
+  "packages": {
+    "r": { "survival": "3.5-8" },
+    "python": { "lifelines": "0.28.0", "pandas": "2.2.2", "scipy": "1.13.1", "numpy": "1.26.4" }
+  },
+
+  "pinned_defaults": [
+    "R: conf.type = \"log-log\". survfit DEFAULTS TO \"log\", which produces upper limits above 1 in the tail, where a survival probability cannot go.",
+    "SAS: conftype=loglog. This IS PROC LIFETEST's default and is named anyway, because it is not R's -- the same curve carries a different default band in the two languages and neither output says which.",
+    "Python: lifelines uses the exponential Greenwood interval, which IS the log-log transform, and offers no alternative. Stated rather than relied on.",
+    "R: rho = 0, the unweighted log-rank. rho = 1 is Peto-Peto, which weights early differences more heavily.",
+    "Stata: sts test ... , logrank. The weighted alternatives are options on the same command.",
+    "SAS: nothing to pin for the test. PROC LIFETEST prints log-rank, Wilcoxon and likelihood-ratio together and the choice is which row the reader takes."
+  ],
+
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+}
