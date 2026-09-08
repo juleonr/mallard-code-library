@@ -97,11 +97,18 @@ committed seed and above 1.3 on 98% of 200 calibration seeds. Some clinics presc
 others, which is both realistic and what puts the exposure contrast between clusters where the
 clustering can reach it.
 
-**Cluster sizes vary from 8 to 40.** With equal cluster sizes, working-independence and
-working-exchangeable give the **same** point estimate, and the choice of working correlation would
-have nothing to say about the estimate at all. Size is drawn independently of exposure and outcome:
-cluster size that carries information about the outcome makes the two working correlations target
-**different estimands**, which is real and is not this entry's subject.
+**Cluster sizes vary from 8 to 40.** The two working correlations coincide exactly in one classic
+case — equal cluster sizes with a purely **cluster-level** covariate — and this fixture is away from
+it on both counts, so the structure reaches the estimate and not only the standard error. Measured:
+`geepack` gives **0.5874** exchangeable against **0.5727** independence.
+
+That is deliberately the weaker phrasing. Unequal cluster sizes do not *prove* the two estimates
+must differ; they remove the condition under which the two must agree. The number above is what
+establishes that they do differ here.
+
+Size is drawn independently of exposure and outcome. Cluster size that **carries information** about
+the outcome makes the two working correlations target genuinely different estimands — real, and not
+this entry's subject.
 
 **Ninety clusters**, not twelve. The sandwich is a large-sample estimator and is biased downward
 when clusters are few — CLAUDE.md warns under 30 and blocks under 15 unless a small-sample approach

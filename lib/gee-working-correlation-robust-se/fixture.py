@@ -31,11 +31,16 @@ Two further properties the fixture needs, both deliberate:
   the correlation; README.md has both. Recorded rather than asserted, because the rationale for a
   smaller spread reads perfectly well and produces an entry that demonstrates nothing.
 
-  CLUSTER SIZES VARY WIDELY (8 to 40). Equal cluster sizes make working-independence and
-  working-exchangeable give the SAME point estimate, so the choice of working correlation would have
-  nothing to say about the estimate. Size is drawn independently of exposure and outcome: cluster
-  size that CARRIES information about the outcome makes the two working correlations target
-  different estimands, which is a real subtlety and not the subject of this entry.
+  CLUSTER SIZES VARY WIDELY (8 to 40). The two working correlations coincide exactly in one classic
+  case -- equal cluster sizes with a purely CLUSTER-LEVEL covariate -- and this fixture is away from
+  it on both counts, so the choice of structure reaches the estimate rather than only the standard
+  error. MEASURED: geepack gives 0.5874 exchangeable against 0.5727 independence. The statement is
+  put that way round on purpose: unequal sizes do not by themselves prove the estimates must differ,
+  they remove the condition under which they must agree.
+
+  Size is drawn independently of exposure and outcome. Cluster size that CARRIES information about
+  the outcome makes the two working correlations target genuinely DIFFERENT estimands, which is real
+  (Seaman and colleagues on informative cluster size) and is not the subject of this entry.
 
 Stdlib only, so it runs anywhere. statistics.NormalDist supplies the inverse normal CDF.
 """
