@@ -77,6 +77,16 @@ def compare(results: dict, expected: dict) -> list:
     agree = expected.get("agreement", {})
     tol_est = float(agree.get("tolerance_estimate", 1e-6))
     tol_se = float(agree.get("tolerance_se", 1e-5))
+    # PER-KEY AGREEMENT TOLERANCES, for the case where two engines implement a quantity that is
+    # not uniquely defined. gee-working-correlation-robust-se is it: geepack and statsmodels
+    # estimate the exchangeable working correlation with their own moment estimators, and the
+    # model-based variance is computed FROM that correlation, so it inherits the difference.
+    # Loosening a key here is an admission that has to be argued in expected.json, not a way of
+    # making a disagreement go away -- which is why an unused key is reported below.
+    agree_by_key = agree.get("tolerance_by_key") or {}
+    if not isinstance(agree_by_key, dict):
+        findings.append("agreement.tolerance_by_key is not an object; it was ignored")
+        agree_by_key = {}
 
     # --- agreement: every numeric key at least two engines both reported ---
     keys = sorted({k for l in langs for k, v in results[l].items() if isinstance(v, float)})
@@ -87,13 +97,21 @@ def compare(results: dict, expected: dict) -> list:
         if len(present) < 2:
             continue
         compared += 1
-        tol = tol_se if field.endswith("_se") else tol_est
+        tol = float(agree_by_key.get(
+            field, tol_se if field.endswith("_se") else tol_est))
         lo, hi = min(present.values()), max(present.values())
         if abs(hi - lo) > tol:
             spread = ", ".join(f"{l}={v:.10f}" for l, v in sorted(present.items()))
             findings.append(
                 f"AGREEMENT {field}: spread {abs(hi - lo):.3e} exceeds {tol:.0e} -- {spread}. "
                 f"On identical rows this is a package default, not rounding.")
+    # A LOOSENED KEY NO ENGINE EMITS constrains nothing and reads like a check that passed --
+    # the same shape as the recovery guard below and as this function's own hardcoded-field bug.
+    emitted = {k for l in langs for k in results[l]}
+    for named in sorted(set(agree_by_key) - emitted):
+        findings.append(
+            f"agreement.tolerance_by_key names {named!r}, which no engine emitted; "
+            f"it constrains nothing and is probably a typo")
     if len(langs) >= 2 and compared == 0:
         findings.append(
             "two engines ran but shared NO field, so the agreement claim covered nothing. "

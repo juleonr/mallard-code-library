@@ -51,12 +51,13 @@ standard errors rather than two.** A model-based variance computed under an EXCH
 already carries the within-clinic correlation and lands near the sandwich. One computed under
 INDEPENDENCE does not carry it at all.
 
-So the two defaults interact, and the severe case is a pair **no single package defaults to**:
+So the two defaults interact, and the severe case is a pair **no single package defaults to**.
+Measured in CI on the committed fixture, `geepack`:
 
-| | model-based SE | sandwich SE | ratio |
+| working correlation | model-based SE | sandwich SE | ratio |
 |---|---|---|---|
-| exchangeable working correlation | *(from the run)* | *(from the run)* | *(from the run)* |
-| independence working correlation | *(from the run)* | *(from the run)* | *(from the run)* |
+| exchangeable | 0.1188 | 0.1315 | **1.11** |
+| independence | 0.0944 | 0.1685 | **1.79** |
 
 Stata's own pair — exchangeable structure with a model-based variance — is the mild row. R,
 statsmodels and GENMOD default to independence with a sandwich, which is also fine. The severe row
@@ -66,6 +67,11 @@ purpose.
 
 All four are separate harness keys, so an engine reporting one as another fails the agreement check
 rather than passing with a plausible number.
+
+**Read the table the right way round.** The mild row is not reassurance: a model-based variance
+computed under the *right* structure is close to the sandwich because it has already absorbed the
+correlation. It is the pair — independence structure, model-based error — that is 44% too narrow,
+and no package produces that pair on its own. A file translated between two of them does.
 
 ### And a silent one in R that has nothing to do with statistics
 
@@ -110,12 +116,29 @@ will find the second and the generator is written in terms of the first.
 ## The two claims
 
 **Agreement** is between `geepack` and `statsmodels` on the same rows: coefficients, both standard
-errors, and the estimated working correlation.
+errors under both working correlations, and the estimated working correlation itself.
 
-`alpha_exchangeable` is included **deliberately** as the key most likely to differ — the two
-packages estimate the working correlation with their own moment estimators and nothing guarantees
-those coincide. A check whose keys are chosen to avoid the awkward ones is calibrated against
-nothing.
+`alpha_exchangeable` was included **deliberately** as the key most likely to differ — a check whose
+keys are chosen to avoid the awkward ones is calibrated against nothing — **and it does differ.**
+
+| key | `geepack` | `statsmodels` | spread |
+|---|---|---|---|
+| `alpha_exchangeable` | 0.1849411436 | 0.1847036384 | 2.375e-04 |
+| `exposure_se_naive` | 0.1187875776 | 0.1172338035 | 1.554e-03 |
+
+Neither is a defect. The exchangeable α is a **moment estimator that is not uniquely defined**, and
+two packages are entitled to different residual scalings; the model-based variance is computed *from*
+α, so it inherits the difference.
+
+**What makes that argument checkable rather than a convenient story** is where the disagreement is
+*not*. The two engines agree to ten decimals on every key of the independence fit — 0.5726722441,
+0.1685252182, 0.0944282807 — and on the exchangeable fit's coefficients and sandwich error. An
+independence fit has no α. The disagreement appears exactly where α enters and nowhere else.
+
+So those two keys carry their own agreement tolerances (1e-3 and 5e-3), argued in `expected.json`
+rather than quietly widened. They are still 185x and 5x below the gap a **wrong** working
+correlation produces (α = 0 against 0.185; a naive SE of 0.0944 against 0.1188), so they admit two
+moment estimators and reject a structurally different fit.
 
 **Recovery** is against the fixture's own marginal log odds ratio, `log(2) = 0.6931`, which is exact
 by construction rather than a recording of what this code produced. Tolerance 0.50, measured over

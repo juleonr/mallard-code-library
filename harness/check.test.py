@@ -89,6 +89,37 @@ def main():
           not any(f.startswith("AGREEMENT") for f in one))
     check("no engine at all is a finding", fires(compare({}, EXPECTED), "no executed implementation"))
 
+    print("per-key agreement tolerances")
+
+    LOOSE = {
+        "truth": {},
+        "agreement": {"tolerance_estimate": 1e-4, "tolerance_se": 1e-5,
+                      "tolerance_by_key": {"alpha": 1e-3}},
+        "recovery": {"tolerance_estimate": 0.2},
+    }
+    pair = {"r": {"alpha": 0.1849411436, "beta": 0.1849411436},
+            "python": {"alpha": 0.1847036384, "beta": 0.1847036384}}
+    out = compare(pair, LOOSE)
+    # The SAME spread on two keys, one loosened and one not. A single tolerance could not produce
+    # both answers, which is what makes this feature testable at all.
+    check("the loosened key passes at its own tolerance", not fires(out, "AGREEMENT alpha"), out)
+    check("the same spread on an unlisted key still fails", fires(out, "AGREEMENT beta"), out)
+    check("a per-key agreement tolerance no engine emitted is named",
+          fires(compare(pair, {**LOOSE, "agreement": {**LOOSE["agreement"],
+                                                      "tolerance_by_key": {"alfa": 1e-3}}}),
+                "no engine emitted"))
+    check("and a correctly spelled one is not",
+          not fires(out, "no engine emitted"))
+    check("an agreement tolerance_by_key that is not an object is reported",
+          fires(compare(pair, {**LOOSE, "agreement": {**LOOSE["agreement"],
+                                                      "tolerance_by_key": "1e-3"}}),
+                "agreement.tolerance_by_key is not an object"))
+    # AND IT STILL REJECTS A REAL DIFFERENCE. Loosening alpha to 1e-3 must not admit the gap a
+    # wrong working correlation produces, which on the real entry is 0.185 against 0.
+    check("a loosened key still catches a structurally different answer",
+          fires(compare({"r": {"alpha": 0.1849411436}, "python": {"alpha": 0.0}}, LOOSE),
+                "AGREEMENT alpha"))
+
     print("recovery")
 
     off = {"r": {"exposure_log_rr": 0.9}, "python": {"exposure_log_rr": 0.9}}

@@ -11,10 +11,16 @@
   },
 
   "agreement": {
-    "claim": "geepack and statsmodels fit the same exchangeable-working-correlation GEE on the same rows and agree on the coefficients and on both standard errors",
+    "claim": "geepack and statsmodels fit the same exchangeable-working-correlation GEE on the same rows and agree on the coefficients and both standard errors; the two keys computed from the estimated working correlation agree to their own stated tolerances, which are looser and argued below",
     "tolerance_estimate": 0.0001,
     "tolerance_se": 0.0001,
-    "_alpha_is_the_key_to_watch": "alpha_exchangeable is included deliberately even though it is the key most likely to differ: geepack and statsmodels estimate the working correlation by their own moment estimators, and nothing guarantees those coincide. A check whose keys are chosen to avoid the awkward ones is calibrated against nothing. If they disagree, the entry says so rather than dropping the key."
+    "tolerance_by_key": {
+      "alpha_exchangeable": 0.001,
+      "exposure_se_naive": 0.005
+    },
+    "_they_did_disagree_and_the_entry_says_so_rather_than_dropping_the_key": "alpha_exchangeable was included deliberately as the key most likely to differ, and it does. MEASURED IN CI: geepack 0.1849411436 against statsmodels 0.1847036384, a spread of 2.375e-04. exposure_se_naive follows it -- 0.1187875776 against 0.1172338035, 1.554e-03 -- because a model-based variance under an exchangeable structure is computed FROM the working correlation and inherits its estimator. Neither is a defect: the exchangeable alpha is a MOMENT estimator that is not uniquely defined, and two packages are entitled to different residual scalings.",
+    "_and_the_disagreement_is_localised_which_is_what_makes_that_argument_checkable": "The two engines agree to ten decimals on every key of the INDEPENDENCE fit -- exposure_log_or_independence 0.5726722441, exposure_se_robust_independence 0.1685252182, exposure_se_naive_independence 0.0944282807 -- and on the exchangeable fit's coefficients and sandwich error. An independence fit has no alpha. So the disagreement appears exactly where alpha enters and nowhere else, which is the evidence that it is the estimator and not an implementation fault.",
+    "_the_loosened_tolerances_still_reject_what_matters": "A wrong working correlation is not a small difference: independence gives alpha = 0 against 0.185, and a naive SE of 0.0944 against 0.1188. The tolerances above are 185x and 5x below those gaps, so they admit two moment estimators and still reject a structurally different fit. Loosening a key is an admission that has to be argued, which is what this note is."
   },
 
   "recovery": {
