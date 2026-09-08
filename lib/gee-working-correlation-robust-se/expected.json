@@ -1,0 +1,40 @@
+{
+  "method": "gee-working-correlation-robust-se",
+  "fixture": "fixture.csv",
+
+  "_why_not_self_generated": "The outcome is drawn from p = expit(b0 + b1*exposed + b2*x) and thresholded against a latent normal whose within-cluster correlation is 0.25. The latent variable is standard normal marginally whatever that correlation is, so P(Y=1) is exactly p and b1 IS the marginal log odds ratio. GEE targets that parameter, so the recovery claim measures the implementation rather than the gap between a conditional and a marginal estimand.",
+
+  "truth": {
+    "source": "the fixture's data-generating process",
+    "exposure_log_or": 0.6931471805599453,
+    "covariate_beta": 0.30
+  },
+
+  "agreement": {
+    "claim": "geepack and statsmodels fit the same exchangeable-working-correlation GEE on the same rows and agree on the coefficients and on both standard errors",
+    "tolerance_estimate": 0.0001,
+    "tolerance_se": 0.0001,
+    "_alpha_is_the_key_to_watch": "alpha_exchangeable is included deliberately even though it is the key most likely to differ: geepack and statsmodels estimate the working correlation by their own moment estimators, and nothing guarantees those coincide. A check whose keys are chosen to avoid the awkward ones is calibrated against nothing. If they disagree, the entry says so rather than dropping the key."
+  },
+
+  "recovery": {
+    "claim": "the estimate is close to the MARGINAL log odds ratio the fixture used",
+    "tolerance_estimate": 0.50,
+    "_calibration": "Measured over 200 alternative seeds of the generator, fitted with a stdlib IRLS logistic regression that is not one of the library's engines (the independence-working-correlation point estimate). Miss from the true 0.6931: median 0.1190, 95th percentile 0.3283, maximum 0.3978. The committed seed misses by 0.1205.",
+    "_the_claim_is_weak_and_that_is_stated_rather_than_hidden": "0.50 is most of the effect being estimated. Exposure is allocated largely at the clinic level, so the effective sample size is closer to 90 clinics than 2169 patients and the sampling distribution is genuinely this wide. The claim that carries this entry is AGREEMENT, plus the naive-against-robust ratio, which is 1.785 on the committed seed and above 1.3 on 98% of the 200 calibration seeds -- so the demonstration is a property of the design, not of the seed."
+  },
+
+  "must_appear": {
+    "r": ["geeglm(", "corstr = \"exchangeable\"", "order(d$clinic)", "vbeta.naiv"],
+    "python": ["cov_struct=Exchangeable()", "cov_type=\"naive\"", "groups=\"clinic\""],
+    "sas": ["type=exch", "event='1'", "modelse", "repeated subject=clinic"],
+    "stata": ["corr(exchangeable)", "vce(robust)", "xtset clinic"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": true },
+    "sas": { "executed": false, "reason": "no SAS engine licensed" },
+    "stata": { "executed": false, "reason": "no Stata licence" }
+  }
+}
