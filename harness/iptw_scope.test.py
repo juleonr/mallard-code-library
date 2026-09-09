@@ -53,7 +53,7 @@ for case in ("old-variant", "python-unstabilized", "r-unstabilized"):
             target.write_text(source.replace(before, "1 / e, 1 / (1 - e)"))
         try:
             check_entry(path)
-        except (AssertionError, subprocess.CalledProcessError):
+        except AssertionError:
             print(f"PASS {case} detected")
         else:
             raise AssertionError(f"{case} escaped the weight/scope consistency check")
