@@ -9,9 +9,10 @@ import random
 def rows(seed=90210, n=4000):
     rng = random.Random(seed)
     for _ in range(n):
-        x, z = rng.gauss(0, 1), rng.randrange(2)
+        # Round beyond the accuracy needed here to discard platform libm tail bits.
+        x, z = round(rng.gauss(0, 1), 12), rng.randrange(2)
         lp = -0.8 + 0.9 * x + 0.5 * z
-        p = 1 / (1 + math.exp(-lp))
+        p = round(1 / (1 + math.exp(-lp)), 12)
         yield {"x": x, "z": z, "predicted": p, "outcome": int(rng.random() < p)}
 
 

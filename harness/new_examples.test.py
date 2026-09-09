@@ -42,8 +42,17 @@ def survey(rows, domain=False, broken=False):
 
 if __name__ == '__main__':
     import csv
+    import io
     from check import parse_harness_block
     import subprocess
+    # Regeneration must reproduce each committed fixture byte for byte.
+    for name in ('complex-survey-domain-prevalence', 'prediction-binary-validation'):
+        generated = list(fixture(name)())
+        output = io.StringIO(newline='')
+        writer = csv.DictWriter(output, fieldnames=list(generated[0]))
+        writer.writeheader()
+        writer.writerows(generated)
+        assert output.getvalue().encode() == (ROOT/'lib'/name/'fixture.csv').read_bytes(), name
     generate = fixture('complex-survey-domain-prevalence')
     rows = list(generate())
     full, domain = survey(rows), survey(rows, True)

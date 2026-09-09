@@ -8,9 +8,8 @@
     "calibration_slope": 1
   },
   "agreement": {
-    "claim": "R and Python point estimates and standard errors on identical committed rows",
-    "tolerance_estimate": 1e-06,
-    "tolerance_se": 1e-06
+    "claim": "R and Python point estimates on identical committed rows; standard errors and confidence intervals are not implemented",
+    "tolerance_estimate": 1e-06
   },
   "recovery": {
     "claim": "Known population calibration parameters",
