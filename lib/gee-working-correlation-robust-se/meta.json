@@ -33,5 +33,35 @@
     "Stata: corr(exchangeable) IS xtgee's default and is written out anyway, because it is the only one of the four that defaults this way.",
     "Stata: vce(robust) is NOT the default. xtgee reports the MODEL-BASED standard error unless asked, while the other three report the sandwich."
   ],
-  "engines": {"r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed"}
+  "engines": {"r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed"},
+  "compatibility": {
+    "target": [
+      "causal",
+      "associational"
+    ],
+    "outcomeType": [
+      "binary"
+    ],
+    "summaryMeasure": [
+      "oddsRatio"
+    ],
+    "effectScale": [
+      "marginal"
+    ],
+    "samplingStructure": [
+      "clustered"
+    ],
+    "competingEvents": [
+      false
+    ],
+    "repeatedMeasures": [
+      false
+    ],
+    "missingData": [
+      "completeData"
+    ],
+    "variant": [
+      "exchangeable-sandwich-at-least-30-clusters"
+    ]
+  }
 }

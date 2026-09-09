@@ -33,5 +33,34 @@
     "Every file also computes the NAIVE curve on purpose, so the size of the error is in the output rather than in a comment."
   ],
 
-  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" },
+  "compatibility": {
+    "target": [
+      "descriptive"
+    ],
+    "outcomeType": [
+      "timeToEvent"
+    ],
+    "summaryMeasure": [
+      "other"
+    ],
+    "effectScale": [
+      "cumulativeIncidence"
+    ],
+    "samplingStructure": [
+      "independent"
+    ],
+    "competingEvents": [
+      true
+    ],
+    "repeatedMeasures": [
+      false
+    ],
+    "missingData": [
+      "completeData"
+    ],
+    "variant": [
+      "Aalen-Johansen-no-ties"
+    ]
+  }
 }

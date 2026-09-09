@@ -7,7 +7,7 @@ from metadata import declarations
 
 root = Path(__file__).resolve().parent.parent / "lib"
 declarations(root)  # Byte-faithful negative control: the whole committed library.
-cases = ("missing-state", "contradictory-state", "conflicting-version", "missing-source")
+cases = ("missing-state", "contradictory-state", "conflicting-version", "missing-source", "missing-compatibility")
 for case in cases:
     with tempfile.TemporaryDirectory() as tmp:
         target = Path(tmp) / "lib"
@@ -20,8 +20,10 @@ for case in cases:
             value["engines"]["r"] = "not-executed"
         elif case == "conflicting-version":
             value["packages"]["r"]["survival"] = "0.0"
-        else:
+        elif case == "missing-source":
             path.with_name("r.R").unlink()
+        else:
+            del value["compatibility"]["effectScale"]
         path.write_text(json.dumps(value))
         try:
             declarations(target)

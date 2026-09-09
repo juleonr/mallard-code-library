@@ -1,0 +1,75 @@
+{
+  "id": "complex-survey-domain-prevalence",
+  "title": "Complex survey prevalence and domain estimation",
+  "summary": "Weighted binary prevalence and Taylor-linearized standard errors for a one-stage stratified PSU design, retaining all sampled PSUs for a domain estimate. This is a limited worked example, not a general survey-analysis engine.",
+  "learn": "analysis.complex_survey",
+  "engines": {
+    "r": "executed",
+    "python": "executed",
+    "sas": "not-executed",
+    "stata": "not-executed"
+  },
+  "packages": {
+    "python": {
+      "statsmodels": "0.14.2",
+      "pandas": "2.2.2",
+      "numpy": "1.26.4",
+      "scipy": "1.13.1"
+    },
+    "r": {
+      "survey": "4.5"
+    },
+    "sas": {},
+    "stata": {}
+  },
+  "pinned_defaults": [
+    "Declare strata, PSUs and inverse-inclusion-probability weights on the full eligible sample before domain restriction.",
+    "PSU identifiers repeat between strata; R uses nest=TRUE, Python groups by both identifiers and Stata creates a combined identifier.",
+    "With-replacement Taylor variance, no finite-population correction. The example covers one-stage PSU sampling with small sampling fractions, not replicate-weight, calibrated or multistage designs.",
+    "Every sampled PSU, including PSUs with zero domain observations, contributes to the stratum variance calculation.",
+    "Missing values, nonpositive weights and unresolved lonely PSUs are rejected. Provider-specific interval and reliability rules remain necessary."
+  ],
+  "sizing": {
+    "calc": "none"
+  },
+  "estimand": {
+    "target": [
+      "descriptive"
+    ],
+    "summaryMeasure": [
+      "prevalence"
+    ],
+    "clustered": true,
+    "repeatedMeasures": false,
+    "competingEvents": false
+  },
+  "compatibility": {
+    "target": [
+      "descriptive"
+    ],
+    "outcomeType": [
+      "binary"
+    ],
+    "summaryMeasure": [
+      "prevalence"
+    ],
+    "effectScale": [
+      "populationPrevalence"
+    ],
+    "samplingStructure": [
+      "stratifiedPSU"
+    ],
+    "competingEvents": [
+      false
+    ],
+    "repeatedMeasures": [
+      false
+    ],
+    "missingData": [
+      "completeData"
+    ],
+    "variant": [
+      "one-stage-WR-Taylor-domain"
+    ]
+  }
+}

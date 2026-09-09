@@ -30,5 +30,34 @@
 
   "_wilson_only_for_single_proportions": "This interval belongs to a single proportion or rate and nowhere else. Attaching Wilson or Clopper-Pearson to an adjusted model estimate, an odds ratio or a hazard ratio is wrong; those take profile-likelihood or Wald intervals, and bootstrapped quantities take percentile or bias-corrected ones.",
 
-  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" },
+  "compatibility": {
+    "target": [
+      "diagnostic"
+    ],
+    "outcomeType": [
+      "binary"
+    ],
+    "summaryMeasure": [
+      "sensitivitySpecificity"
+    ],
+    "effectScale": [
+      "diagnosticAccuracy"
+    ],
+    "samplingStructure": [
+      "independent"
+    ],
+    "competingEvents": [
+      false
+    ],
+    "repeatedMeasures": [
+      false
+    ],
+    "missingData": [
+      "completeData"
+    ],
+    "variant": [
+      "binary-test-Wilson"
+    ]
+  }
 }
