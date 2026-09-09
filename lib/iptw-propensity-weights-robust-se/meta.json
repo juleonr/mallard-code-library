@@ -24,6 +24,7 @@
     "stata": {}
   },
   "pinned_defaults": [
+    "All languages: stabilized ATE weights multiply inverse propensity by the marginal probability of the observed treatment arm. No trimming or truncation is applied.",
     "R: weights= in glm means a PRIOR PRECISION weight for gaussian and a COUNT OF TRIALS for binomial. One argument, two meanings, chosen by the family.",
     "R: sandwich::vcovHC(type='HC0'). The model-based error from vcov() treats estimated weights as known precision.",
     "Python: WLS's weights argument is the var_weights sense. statsmodels splits R's one argument into var_weights and freq_weights and makes the caller choose; freq_weights reports a standard error computed as though the study had sum(w) participants.",
@@ -58,7 +59,7 @@
       "completeData"
     ],
     "variant": [
-      "ATE-unstabilized-untrimmed-HC0"
+      "ATE-stabilized-untrimmed-HC0"
     ]
   }
 }
