@@ -55,8 +55,47 @@ def strip_stata_comments(text: str) -> str:
 
 
 def strip_sas_comments(text: str) -> str:
-    """SAS comments are /* ... */ blocks and lines beginning with `*` up to the next `;`."""
-    return re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
+    """Remove block and statement comments without consuming quoted SAS values.
+
+    A statement comment starts at a statement boundary, not at multiplication's `*`.
+    Quoted semicolons do not finish a statement; SAS escapes quotes by doubling them.
+    """
+    out, i, boundary, quote = [], 0, True, None
+    while i < len(text):
+        ch = text[i]
+        if quote:
+            out.append(ch)
+            if ch == quote:
+                if i + 1 < len(text) and text[i + 1] == quote:
+                    out.append(text[i + 1])
+                    i += 1
+                else:
+                    quote = None
+            i += 1
+            continue
+        if text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            if end < 0:
+                raise ValueError("unterminated SAS block comment")
+            out.append(" ")
+            i = end + 2
+            continue
+        if (boundary and ch == "*") or text.startswith("%*", i):
+            end = text.find(";", i)
+            if end < 0:
+                raise ValueError("unterminated SAS statement comment")
+            out.append(" ")
+            i = end + 1
+            continue
+        out.append(ch)
+        if ch in ("'", '"'):
+            quote = ch
+        if ch == ";":
+            boundary = True
+        elif not ch.isspace():
+            boundary = False
+        i += 1
+    return "".join(out)
 
 
 def lint_stata(path: Path) -> list:
@@ -102,7 +141,7 @@ def lint_sas(path: Path) -> list:
         else:
             continue
         for m in re.finditer(r"\bmodel\b[^;]*;", body, re.I | re.S):
-            if "event" not in m.group(0).lower():
+            if not re.search(r"\bmodel\s+\w+\s*\([^)]*\bevent\s*=", m.group(0), re.I):
                 problems.append(
                     f"{path}: {why} model statement without event= -- "
                     f"the lower response level is modelled by default and the odds ratios invert")

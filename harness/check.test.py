@@ -51,6 +51,13 @@ def main():
         except ValueError:
             check(f"{why} raises", True)
 
+    for bad in ["beta=nan", "beta=inf", "beta=-inf", "beta=1\nbeta=2", "=1"]:
+        try:
+            parse_harness_block("--- HARNESS ---\n" + bad)
+            check(f"invalid result {bad!r} raises", False)
+        except ValueError:
+            check(f"invalid result {bad!r} raises", True)
+
     print("agreement")
 
     EXPECTED = {
@@ -88,6 +95,14 @@ def main():
     check("and one engine makes no agreement finding of its own",
           not any(f.startswith("AGREEMENT") for f in one))
     check("no engine at all is a finding", fires(compare({}, EXPECTED), "no executed implementation"))
+
+    check("non-finite direct input cannot pass", fires(compare({"r": {"beta": float("nan")}, "python": {"beta": 1.0}}, EXPECTED), "non-finite"))
+    check("partial output coverage fails", fires(compare({"r": {"beta": 1.0, "se": 0.1}, "python": {"beta": 1.0}}, EXPECTED), "missing numeric output"))
+    check("integer outputs participate", fires(compare({"r": {"n": 12}, "python": {"n": 13}}, EXPECTED), "AGREEMENT n"))
+    for bad in [float("nan"), float("inf"), -1, "broken", True]:
+        check(f"invalid tolerance {bad!r} fails", fires(compare(agree, {**EXPECTED, "agreement": {"tolerance_estimate": bad}}), "invalid tolerance"))
+    missing = compare({"r": {"se": 0.1}, "python": {"se": 0.1}}, EXPECTED)
+    check("missing truth is a hard failure", any(not f.startswith("NOTE") and "truth names" in f for f in missing))
 
     print("per-key agreement tolerances")
 

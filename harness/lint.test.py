@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import json  # noqa: E402
 from lint import (  # noqa: E402
-    lint_must_appear, lint_sas, lint_stata, strip_hash_comments)
+    lint_must_appear, lint_sas, lint_stata, strip_hash_comments, strip_sas_comments)
 
 FAILURES = []
 
@@ -136,6 +136,15 @@ run;
 ''')
         check("a PROC LOGISTIC inside a COMMENT does not trigger the event= rule",
               lint_sas(commented) == [], lint_sas(commented))
+
+        check("statement comments cannot supply a pinned option", "ties=efron" not in strip_sas_comments("* pinned\nties=efron; proc phreg; run;"))
+        check("inline statement comments are removed", "event=" not in strip_sas_comments("proc logistic; * event='1'; model y=x; run;"))
+        check("multiplication survives", "x * y" in strip_sas_comments("data d; z=x * y; run;"))
+        check("quoted comment markers survive", "'/* * ; */'" in strip_sas_comments("data d; x='/* * ; */'; run;"))
+        event_variable = write(tmp, "event-variable.sas", "proc logistic; model event=x; run;")
+        check("a variable called event cannot supply event=", len(lint_sas(event_variable)) == 1)
+        actual = Path(__file__).resolve().parent.parent / "lib/cox-proportional-hazards/sas.sas"
+        check("byte-faithful current Cox SAS remains valid", lint_sas(actual) == [])
 
         print("comment stripping (R and Python)")
 

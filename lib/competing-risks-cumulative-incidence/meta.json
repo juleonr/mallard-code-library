@@ -21,7 +21,7 @@
   "_no_effect_measure": "summaryMeasure is `other`: this estimates a CURVE. A subdistribution hazard ratio is Fine-Gray and a cause-specific hazard ratio is a Cox model on cause 1 with cause 2 censored -- different questions, both out of scope here.",
 
   "packages": {
-    "r": { "survival": "3.5-8" },
+    "r": { "survival": "3.8-11" },
     "python": { "lifelines": "0.28.0", "pandas": "2.2.2", "scipy": "1.13.1", "numpy": "1.26.4" }
   },
 

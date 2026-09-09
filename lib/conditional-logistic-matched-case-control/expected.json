@@ -24,7 +24,6 @@
   "truth": {
     "source": "the fixture's data-generating process, not any implementation of the analysis",
     "exposure_log_or": 0.6931471805599453,
-    "exposure_or": 2.0,
     "covariate_beta": 0.4
   },
   "agreement": {
@@ -70,5 +69,9 @@
       "executed": false,
       "reason": "no Stata licence yet; the AEA Data Editor CI pattern applies once one exists"
     }
+  },
+  "derived_truth": {
+    "exposure_or": 2.0,
+    "note": "Exponentiated generating coefficient for interpretation only; recovery is checked on the log scale in truth."
   }
 }

@@ -22,7 +22,7 @@
   "_clustering_is_a_different_entry": "clustered is false above. A robust sandwich standard error is NOT cluster-robust: it corrects for unequal variance between observations and assumes they are independent. Where observations share a ward, clinic or patient, the correction needed is by CLUSTER, and this entry must not be routed to such a plan.",
 
   "packages": {
-    "r": { "sandwich": "3.1-0", "lmtest": "0.9-40" },
+    "r": { "sandwich": "3.1-3", "lmtest": "0.9-40" },
     "python": { "statsmodels": "0.14.2", "pandas": "2.2.2", "numpy": "1.26.4", "scipy": "1.13.1" }
   },
 
