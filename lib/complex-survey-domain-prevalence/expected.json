@@ -1,0 +1,72 @@
+{
+  "method": "complex-survey-domain-prevalence",
+  "fixture": "fixture.csv",
+  "truth": {
+    "source": "the fixture data-generating process",
+    "prevalence": 0.4642857142857143,
+    "domain_prevalence": 0.4642857142857143
+  },
+  "agreement": {
+    "claim": "R and Python point estimates and standard errors on identical committed rows",
+    "tolerance_estimate": 1e-06,
+    "tolerance_se": 1e-06
+  },
+  "recovery": {
+    "claim": "Known stratum-size-weighted marginal prevalence, also the domain prevalence because domain assignment is independent of the outcome",
+    "tolerance_estimate": 0.08,
+    "calibration": {
+      "seeds": 100,
+      "measured": {
+        "se_correct": 0.022259318186467588,
+        "se_deleted_psus": 0.01856798260532862,
+        "recovery_miss_99th": 0.05800985112335538
+      },
+      "tolerance": 0.08,
+      "limits": "This fixed-seed calibration characterizes the implemented synthetic generator, not every possible dataset."
+    }
+  },
+  "must_appear": {
+    "r": [
+      "svydesign(",
+      "strata = ~stratum",
+      "weights = ~weight",
+      "nest = TRUE",
+      "subset(design, domain == 1)"
+    ],
+    "python": [
+      "groupby([\"stratum\", \"psu\"]",
+      "data.weight * domain * (data.outcome - estimate)",
+      "m/(m-1)"
+    ],
+    "sas": [
+      "proc surveymeans",
+      "varmethod=taylor",
+      "strata stratum",
+      "cluster psu",
+      "weight weight",
+      "domain domain"
+    ],
+    "stata": [
+      "svyset psu_unique [pweight=weight]",
+      "strata(stratum)",
+      "subpop(domain)",
+      "vce(linearized)"
+    ]
+  },
+  "engines": {
+    "r": {
+      "executed": true
+    },
+    "python": {
+      "executed": true
+    },
+    "sas": {
+      "executed": false,
+      "reason": "No licensed engine executed"
+    },
+    "stata": {
+      "executed": false,
+      "reason": "No licensed engine executed"
+    }
+  }
+}

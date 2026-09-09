@@ -34,5 +34,35 @@
 
   "_few_clusters": "Under 30 clusters, ordinary sandwich or GEE inference is unreliable and worse under 15. This fixture has 40. The R file prints a warning below 30 rather than leaving it to the reader.",
 
-  "engines": { "r": "executed", "python": "not-applicable", "sas": "not-executed", "stata": "not-executed" }
+  "engines": { "r": "executed", "python": "not-applicable", "sas": "not-executed", "stata": "not-executed" },
+  "compatibility": {
+    "target": [
+      "causal",
+      "associational"
+    ],
+    "outcomeType": [
+      "binary"
+    ],
+    "summaryMeasure": [
+      "oddsRatio"
+    ],
+    "effectScale": [
+      "clusterConditional"
+    ],
+    "samplingStructure": [
+      "clustered"
+    ],
+    "competingEvents": [
+      false
+    ],
+    "repeatedMeasures": [
+      false
+    ],
+    "missingData": [
+      "completeData"
+    ],
+    "variant": [
+      "random-intercept-logit"
+    ]
+  }
 }

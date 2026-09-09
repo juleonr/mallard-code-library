@@ -48,5 +48,35 @@
     "python": "executed",
     "sas": "not-executed",
     "stata": "not-executed"
+  },
+  "compatibility": {
+    "target": [
+      "causal",
+      "associational"
+    ],
+    "outcomeType": [
+      "binary"
+    ],
+    "summaryMeasure": [
+      "oddsRatio"
+    ],
+    "effectScale": [
+      "matchedConditional"
+    ],
+    "samplingStructure": [
+      "matched"
+    ],
+    "competingEvents": [
+      false
+    ],
+    "repeatedMeasures": [
+      false
+    ],
+    "missingData": [
+      "completeData"
+    ],
+    "variant": [
+      "conditional-likelihood"
+    ]
   }
 }

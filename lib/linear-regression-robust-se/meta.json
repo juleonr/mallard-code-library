@@ -34,5 +34,35 @@
     "The four languages therefore disagree by default while all four print the words robust standard errors: HC3, classical, HC0, HC1."
   ],
 
-  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" },
+  "compatibility": {
+    "target": [
+      "causal",
+      "associational"
+    ],
+    "outcomeType": [
+      "continuous"
+    ],
+    "summaryMeasure": [
+      "meanDifference"
+    ],
+    "effectScale": [
+      "conditional"
+    ],
+    "samplingStructure": [
+      "independent"
+    ],
+    "competingEvents": [
+      false
+    ],
+    "repeatedMeasures": [
+      false
+    ],
+    "missingData": [
+      "completeData"
+    ],
+    "variant": [
+      "OLS-HC3"
+    ]
+  }
 }

@@ -32,5 +32,35 @@
     "The negative binomial dispersion is reported as ALPHA in every file. R's glm.nb reports THETA, which is its reciprocal, and the R file converts rather than emitting a differently scaled number under the same name."
   ],
 
-  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" },
+  "compatibility": {
+    "target": [
+      "causal",
+      "associational"
+    ],
+    "outcomeType": [
+      "count"
+    ],
+    "summaryMeasure": [
+      "rateRatio"
+    ],
+    "effectScale": [
+      "conditional"
+    ],
+    "samplingStructure": [
+      "independent"
+    ],
+    "competingEvents": [
+      false
+    ],
+    "repeatedMeasures": [
+      false
+    ],
+    "missingData": [
+      "completeData"
+    ],
+    "variant": [
+      "log-person-time-offset-HC0"
+    ]
+  }
 }

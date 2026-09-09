@@ -34,5 +34,34 @@
     "The odds ratio is computed FROM THE TABLE in every file. R's fisher.test returns the CONDITIONAL MLE and scipy's fisher_exact returns the SAMPLE odds ratio; two files each reporting 'the odds ratio from Fisher's test' would disagree, and it would look like a bug rather than two estimators."
   ],
 
-  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" },
+  "compatibility": {
+    "target": [
+      "associational"
+    ],
+    "outcomeType": [
+      "binary"
+    ],
+    "summaryMeasure": [
+      "oddsRatio"
+    ],
+    "effectScale": [
+      "marginal"
+    ],
+    "samplingStructure": [
+      "independent"
+    ],
+    "competingEvents": [
+      false
+    ],
+    "repeatedMeasures": [
+      false
+    ],
+    "missingData": [
+      "completeData"
+    ],
+    "variant": [
+      "2x2-Pearson-no-Yates"
+    ]
+  }
 }

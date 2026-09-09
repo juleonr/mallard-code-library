@@ -34,5 +34,35 @@
     "SAS: nothing to pin for the test. PROC LIFETEST prints log-rank, Wilcoxon and likelihood-ratio together and the choice is which row the reader takes."
   ],
 
-  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" },
+  "compatibility": {
+    "target": [
+      "descriptive",
+      "associational"
+    ],
+    "outcomeType": [
+      "timeToEvent"
+    ],
+    "summaryMeasure": [
+      "other"
+    ],
+    "effectScale": [
+      "survivalProbability"
+    ],
+    "samplingStructure": [
+      "independent"
+    ],
+    "competingEvents": [
+      false
+    ],
+    "repeatedMeasures": [
+      false
+    ],
+    "missingData": [
+      "completeData"
+    ],
+    "variant": [
+      "right-censoring-loglog-logrank"
+    ]
+  }
 }

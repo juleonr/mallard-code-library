@@ -1,0 +1,65 @@
+{
+  "method": "prediction-binary-validation",
+  "fixture": "fixture.csv",
+  "truth": {
+    "source": "the fixture data-generating process",
+    "calibration_in_large": 0,
+    "calibration_intercept": 0,
+    "calibration_slope": 1
+  },
+  "agreement": {
+    "claim": "R and Python point estimates on identical committed rows; standard errors and confidence intervals are not implemented",
+    "tolerance_estimate": 1e-06
+  },
+  "recovery": {
+    "claim": "Known population calibration parameters",
+    "tolerance_estimate": 0.25,
+    "calibration": {
+      "seeds": 100,
+      "measured": {
+        "pairwise_auc": 0.7322392705472086,
+        "calibration_miss_99th": 0.11695701679779413
+      },
+      "tolerance": 0.25,
+      "limits": "This fixed-seed calibration characterizes the implemented synthetic generator, not every possible dataset."
+    }
+  },
+  "must_appear": {
+    "r": [
+      "offset(lp)",
+      "ties.method = \"average\"",
+      "family = binomial(link = \"logit\")"
+    ],
+    "python": [
+      "offset=lp",
+      "method=\"average\"",
+      "sm.add_constant(lp)"
+    ],
+    "sas": [
+      "event='1'",
+      "offset=lp",
+      "ties=mean"
+    ],
+    "stata": [
+      "offset(lp)",
+      "roctab outcome predicted",
+      "family(binomial) link(logit)"
+    ]
+  },
+  "engines": {
+    "r": {
+      "executed": true
+    },
+    "python": {
+      "executed": true
+    },
+    "sas": {
+      "executed": false,
+      "reason": "No licensed engine executed"
+    },
+    "stata": {
+      "executed": false,
+      "reason": "No licensed engine executed"
+    }
+  }
+}

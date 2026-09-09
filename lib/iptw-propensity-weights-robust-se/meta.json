@@ -31,5 +31,34 @@
     "SAS: repeated subject=id / type=ind is the route to the EMPIRICAL standard error for a weighted GLM. It is not a repeated-measures model; every subject is a cluster of one.",
     "Stata: [pweight=w], not fweight and not aweight. fweight treats the weights as counts, aweight as inverse-variance precision, and only pweight is what a sampling-probability weight is -- Stata then requires a robust variance and supplies it automatically."
   ],
-  "engines": {"r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed"}
+  "engines": {"r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed"},
+  "compatibility": {
+    "target": [
+      "causal"
+    ],
+    "outcomeType": [
+      "binary"
+    ],
+    "summaryMeasure": [
+      "riskDifference"
+    ],
+    "effectScale": [
+      "marginal"
+    ],
+    "samplingStructure": [
+      "independent"
+    ],
+    "competingEvents": [
+      false
+    ],
+    "repeatedMeasures": [
+      false
+    ],
+    "missingData": [
+      "completeData"
+    ],
+    "variant": [
+      "ATE-unstabilized-untrimmed-HC0"
+    ]
+  }
 }

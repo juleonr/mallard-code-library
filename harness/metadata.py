@@ -11,6 +11,7 @@ import re
 import subprocess
 
 FILES = {"r": "r.R", "python": "python.py", "sas": "sas.sas", "stata": "stata.do"}
+COMPATIBILITY_KEYS = {"target", "outcomeType", "summaryMeasure", "effectScale", "samplingStructure", "competingEvents", "repeatedMeasures", "missingData", "variant"}
 
 
 def declarations(root):
@@ -18,6 +19,12 @@ def declarations(root):
     for path in sorted(Path(root).glob("*/meta.json")):
         meta = json.loads(path.read_text())
         expected = json.loads(path.with_name("expected.json").read_text())
+        compatibility = meta.get("compatibility")
+        if not isinstance(compatibility, dict) or set(compatibility) != COMPATIBILITY_KEYS:
+            raise ValueError(f"{path}: incomplete typed compatibility profile")
+        for key, values in compatibility.items():
+            if not isinstance(values, list) or not values or any(type(v) is not (bool if key in ("competingEvents", "repeatedMeasures") else str) for v in values):
+                raise ValueError(f"{path}: invalid compatibility values for {key}")
         states = meta.get("engines", {})
         for lang, filename in FILES.items():
             state = states.get(lang)
