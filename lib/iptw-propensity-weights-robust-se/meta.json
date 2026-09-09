@@ -1,0 +1,35 @@
+{
+  "id": "iptw-propensity-weights-robust-se",
+  "title": "An average treatment effect by inverse-probability-of-treatment weighting",
+  "summary": "Estimates a risk difference by weighting each patient by the inverse of their probability of the treatment they received, where the point estimate is the easy part and every default standard error is wrong.",
+  "estimand": {
+    "target": ["causal"],
+    "summaryMeasure": ["riskDifference"],
+    "assignment": ["nonrandomized"],
+    "clustered": false,
+    "repeatedMeasures": false,
+    "competingEvents": false
+  },
+  "learn": "analysis.propensity_score",
+  "sizing": {
+    "calc": "none"
+  },
+  "_ate_not_att": "IPTW as written here targets the AVERAGE TREATMENT EFFECT: the effect if everyone were treated against everyone untreated. Matching without replacement targets the effect among the TREATED, and on confounded data those are different numbers rather than two routes to one. The fixture's truth is the ATE, computed from the data-generating process before any estimator exists, so an entry that quietly compared it against an ATT estimator would be scoring the wrong quantity.",
+  "_the_weights_are_estimated_and_the_sandwich_does_not_know_that": "Every standard error here treats the propensity score as fixed. It was estimated, and accounting for that -- an M-estimation stack over both stages, or a bootstrap of the whole procedure -- gives a NARROWER interval. The sandwich is therefore conservative rather than correct, which is the safe direction and is not the same thing. Named here and in every file, because an entry that reported it as exact would be teaching the error it exists to prevent.",
+  "_trimming_is_a_different_entry": "The fixture keeps the propensity score inside [0.081, 0.935] with a largest weight of 10.5, and the generator asserts both. Extreme weights are a real problem in real data, but an entry whose fixture produced them would be testing each implementation's TRIMMING defaults rather than its weighting.",
+  "packages": {
+    "r": { "sandwich": "3.1-3" },
+    "python": { "statsmodels": "0.14.2", "pandas": "2.2.2", "numpy": "1.26.4", "scipy": "1.13.1" },
+    "sas": {},
+    "stata": {}
+  },
+  "pinned_defaults": [
+    "R: weights= in glm means a PRIOR PRECISION weight for gaussian and a COUNT OF TRIALS for binomial. One argument, two meanings, chosen by the family.",
+    "R: sandwich::vcovHC(type='HC0'). The model-based error from vcov() treats estimated weights as known precision.",
+    "Python: WLS's weights argument is the var_weights sense. statsmodels splits R's one argument into var_weights and freq_weights and makes the caller choose; freq_weights reports a standard error computed as though the study had sum(w) participants.",
+    "SAS: model treated(event='1') on the propensity model. PROC LOGISTIC models the LOWER ordered level, so omitting it fits P(untreated) and inverts every weight.",
+    "SAS: repeated subject=id / type=ind is the route to the EMPIRICAL standard error for a weighted GLM. It is not a repeated-measures model; every subject is a cluster of one.",
+    "Stata: [pweight=w], not fweight and not aweight. fweight treats the weights as counts, aweight as inverse-variance precision, and only pweight is what a sampling-probability weight is -- Stata then requires a robust variance and supplies it automatically."
+  ],
+  "engines": {"r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed"}
+}

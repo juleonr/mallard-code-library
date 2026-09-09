@@ -1,0 +1,43 @@
+{
+  "method": "competing-risks-cumulative-incidence",
+  "fixture": "fixture.csv",
+
+  "_why_not_self_generated": "Two causes are drawn from independent exponential clocks with constant cause-specific hazards h1 = 0.030 and h2 = 0.055, for which the cumulative incidence of cause 1 has a closed form: h1/(h1+h2) * (1 - exp(-(h1+h2)t)). The truth below is that arithmetic, not a recording of what this code produced.",
+
+  "truth": {
+    "source": "the fixture's data-generating process, in closed form",
+    "cif1_12": 0.2256723741,
+    "cif1_24": 0.3070486903,
+    "cif1_36": 0.3363925782
+  },
+
+  "_the_naive_value_is_not_in_truth_and_that_is_deliberate": "1 - KM converges to 1 - exp(-h1*t), which is 0.3023, 0.5132 and 0.6604 at the three times -- the naive estimator has a limit, it is simply the WRONG quantity. Putting it under `truth` would read as though the library sanctioned it. It is compared BETWEEN engines instead, so a change that quietly fixed or broke the demonstration would still be caught.",
+
+  "agreement": {
+    "claim": "both engines report the same cumulative incidence at three times and the same naive curve on identical rows",
+    "tolerance_estimate": 0.0001,
+    "tolerance_se": 0.0001,
+    "_no_tied_event_times_on_purpose": "lifelines' AalenJohansenFitter does not support tied event times and adds jitter when it finds them, which would make the engines disagree for a reason that has nothing to do with the estimator. Times are therefore NOT rounded to a grid here, and the generator asserts zero ties before writing the file. The Kaplan-Meier entry does the opposite deliberately, because there ties ARE the subject."
+  },
+
+  "recovery": {
+    "claim": "the estimated cumulative incidence is close to the closed form the fixture implies",
+    "tolerance_estimate": 0.06,
+    "_calibration": "MEASURED over 120 alternative seeds of this generator with a standard-library Aalen-Johansen implementation: the worst of the three times' misses had a median of 0.0135, a 95th percentile of 0.0277 and a maximum of 0.0362, so none exceeded 0.06. The committed seed's worst miss is 0.0102, at twelve months.",
+    "_and_it_would_reject_the_naive_curve_outright": "1 - KM misses the same truth by 0.078, 0.197 and 0.308. A tolerance of 0.06 fails all three, which is the property worth having: an implementation that quietly censored the competing cause could not pass this entry's recovery claim."
+  },
+
+  "must_appear": {
+    "r": ["survfit(", "factor(d$status", "Surv(time, state)", "status == 1"],
+    "python": ["AalenJohansenFitter", "event_of_interest=1", "KaplanMeierFitter"],
+    "sas": ["proc lifetest", "eventcode=1", "time*status(0 2)"],
+    "stata": ["stcompet", "compet1(2)"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": true },
+    "sas": { "executed": false, "reason": "no SAS engine licensed" },
+    "stata": { "executed": false, "reason": "no Stata licence" }
+  }
+}

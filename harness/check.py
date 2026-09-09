@@ -20,6 +20,7 @@ where it was written and tested.
 import argparse
 import hashlib
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -43,10 +44,14 @@ def parse_harness_block(stdout: str) -> dict:
             continue
         key, _, value = line.partition("=")
         key, value = key.strip(), value.strip()
+        if not key or key in out:
+            raise ValueError(f"empty or duplicate harness key: {key!r}")
         try:
             out[key] = float(value)
         except ValueError:
             out[key] = value
+        if isinstance(out[key], float) and not math.isfinite(out[key]):
+            raise ValueError(f"non-finite harness result: {key}")
     if not out:
         raise ValueError("harness block is empty")
     return out
@@ -66,6 +71,19 @@ def compare(results: dict, expected: dict) -> list:
     findings = []
     langs = sorted(results)
 
+    def numeric(value):
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+    def tolerance(value, name):
+        try:
+            result = float(value)
+            if isinstance(value, bool) or not math.isfinite(result) or result < 0:
+                raise ValueError()
+            return result
+        except (TypeError, ValueError):
+            findings.append(f"invalid tolerance {name}: must be finite and nonnegative")
+            return 0.0
+
     if not langs:
         return ["no executed implementation produced output at all"]
     if len(langs) == 1:
@@ -75,25 +93,48 @@ def compare(results: dict, expected: dict) -> list:
             f"NOTE only one engine executed ({langs[0]}); the agreement claim was not tested")
 
     agree = expected.get("agreement", {})
-    tol_est = float(agree.get("tolerance_estimate", 1e-6))
-    tol_se = float(agree.get("tolerance_se", 1e-5))
+    tol_est = tolerance(agree.get("tolerance_estimate", 1e-6), "agreement.tolerance_estimate")
+    tol_se = tolerance(agree.get("tolerance_se", 1e-5), "agreement.tolerance_se")
+    # PER-KEY AGREEMENT TOLERANCES, for the case where two engines implement a quantity that is
+    # not uniquely defined. gee-working-correlation-robust-se is it: geepack and statsmodels
+    # estimate the exchangeable working correlation with their own moment estimators, and the
+    # model-based variance is computed FROM that correlation, so it inherits the difference.
+    # Loosening a key here is an admission that has to be argued in expected.json, not a way of
+    # making a disagreement go away -- which is why an unused key is reported below.
+    agree_by_key = agree.get("tolerance_by_key", {})
+    if not isinstance(agree_by_key, dict):
+        findings.append("agreement.tolerance_by_key is not an object; it was ignored")
+        agree_by_key = {}
 
     # --- agreement: every numeric key at least two engines both reported ---
-    keys = sorted({k for l in langs for k, v in results[l].items() if isinstance(v, float)})
+    keys = sorted({k for l in langs for k, v in results[l].items() if numeric(v)})
     compared = 0
     for field in keys:
         present = {l: results[l][field] for l in langs
-                   if isinstance(results[l].get(field), float)}
+                   if numeric(results[l].get(field))}
+        for lang in langs:
+            if lang not in present:
+                findings.append(f"missing numeric output {field!r} in {lang}; every engine must emit the same numeric keys")
+            elif not math.isfinite(present[lang]):
+                findings.append(f"non-finite output {field!r} in {lang}")
         if len(present) < 2:
             continue
         compared += 1
-        tol = tol_se if field.endswith("_se") else tol_est
+        tol = tolerance(agree_by_key.get(
+            field, tol_se if field.endswith("_se") else tol_est), f"agreement.{field}")
         lo, hi = min(present.values()), max(present.values())
         if abs(hi - lo) > tol:
             spread = ", ".join(f"{l}={v:.10f}" for l, v in sorted(present.items()))
             findings.append(
                 f"AGREEMENT {field}: spread {abs(hi - lo):.3e} exceeds {tol:.0e} -- {spread}. "
                 f"On identical rows this is a package default, not rounding.")
+    # A LOOSENED KEY NO ENGINE EMITS constrains nothing and reads like a check that passed --
+    # the same shape as the recovery guard below and as this function's own hardcoded-field bug.
+    emitted = {k for l in langs for k in results[l]}
+    for named in sorted(set(agree_by_key) - emitted):
+        findings.append(
+            f"agreement.tolerance_by_key names {named!r}, which no engine emitted; "
+            f"it constrains nothing and is probably a typo")
     if len(langs) >= 2 and compared == 0:
         findings.append(
             "two engines ran but shared NO field, so the agreement claim covered nothing. "
@@ -101,23 +142,43 @@ def compare(results: dict, expected: dict) -> list:
 
     # --- recovery: every numeric key the fixture states a truth for ---
     truth = expected.get("truth", {})
-    rec_tol = float(expected.get("recovery", {}).get("tolerance_estimate", 0.5))
+    recovery = expected.get("recovery", {})
+    rec_tol = tolerance(recovery.get("tolerance_estimate", 0.5), "recovery.tolerance_estimate")
+    # PER-KEY TOLERANCES, because one number cannot serve two parameters measured on different
+    # scales. mixed-effects-logistic-clustered is the case: with exposure allocated at the cluster
+    # level its conditional log odds ratio needs a tolerance of 0.90 to cover the real sampling
+    # distribution, and applying that same 0.90 to the between-cluster SD -- whose whole miss
+    # distribution tops out at 0.40 -- would make that check pass whatever it was handed.
+    by_key = recovery.get("tolerance_by_key", {})
+    if not isinstance(by_key, dict):
+        findings.append("recovery.tolerance_by_key is not an object; it was ignored")
+        by_key = {}
+    # A KEY THAT MATCHES NOTHING IS NAMED. A typo here would silently apply no tolerance at all
+    # and read exactly like a check that passed -- the same shape as the hardcoded field names
+    # this function's docstring records.
+    for named in sorted(set(by_key) - set(truth)):
+        findings.append(
+            f"recovery.tolerance_by_key names {named!r}, which truth does not; "
+            f"it constrains nothing and is probably a typo")
     for field, want_raw in truth.items():
         if isinstance(want_raw, bool) or not isinstance(want_raw, (int, float)):
             continue
-        seen_in = [l for l in langs if isinstance(results[l].get(field), float)]
+        if not math.isfinite(want_raw):
+            findings.append(f"non-finite truth {field!r}")
+        seen_in = [l for l in langs if numeric(results[l].get(field))]
         if not seen_in:
             # A truth key no engine reports is either a derived convenience value (an odds ratio
             # printed beside the log odds ratio) or a typo. Named either way: a silently skipped
             # check and a passing one look identical from outside.
-            findings.append(f"NOTE truth names {field!r} but no engine reported it; not checked")
+            findings.append(f"truth names {field!r} but no engine reported it; recovery was not checked")
             continue
+        tol = tolerance(by_key.get(field, rec_tol), f"recovery.{field}")
         for lang in seen_in:
             got, want = results[lang][field], float(want_raw)
-            if abs(got - want) > rec_tol:
+            if abs(got - want) > tol:
                 findings.append(
                     f"RECOVERY {field} in {lang}: got {got:.6f}, fixture used {want:.6f}, "
-                    f"off by {abs(got - want):.6f} > {rec_tol}. The model fitted may not be the "
+                    f"off by {abs(got - want):.6f} > {tol}. The model fitted may not be the "
                     f"model the fixture generated.")
     return findings
 

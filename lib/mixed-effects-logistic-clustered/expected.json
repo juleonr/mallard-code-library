@@ -34,9 +34,12 @@
   },
 
   "recovery": {
-    "claim": "the estimate is close to the CLUSTER-CONDITIONAL odds ratio the fixture used",
-    "tolerance_estimate": 0.45,
-    "_note": "PROVISIONAL. With exposure allocated at the cluster level the effective sample size is 40 clusters, not 1200 people, so the SE is far larger than the row count suggests: roughly 0.15 by rough calculation. 0.45 is about three of those. The first run reports the real number and this is reset from it, as the other entries were. The crude MARGINAL odds ratio in this data is 1.379 against a true conditional 2.000, so a tolerance much wider than this would stop distinguishing the two estimands, which is the one thing this entry must not do."
+    "claim": "the estimates are close to the CLUSTER-CONDITIONAL odds ratio and the between-cluster SD the fixture used",
+    "tolerance_estimate": 0.90,
+    "tolerance_by_key": { "cluster_sd": 0.45 },
+    "_calibration": "NO LONGER PROVISIONAL. Measured over 300 alternative seeds of the generator, fitted with a stdlib random-intercept logistic MLE by 30-node Gauss-Hermite quadrature -- not lme4, not statsmodels -- which reproduces glmer's answer on the committed fixture to five decimals (0.360097 against 0.3601152, cluster_sd 0.645055 against 0.6450577). Conditional log OR miss: median 0.1927, 95th percentile 0.5598, maximum 0.8859. Between-cluster SD miss: median 0.0832, 95th 0.2414, maximum 0.4033. The committed seed misses by 0.3330 and 0.1549.",
+    "_the_provisional_0.45_was_too_tight_and_the_reason_it_was_set_is_now_a_finding": "0.45 was chosen so the tolerance would stay narrower than the gap between the conditional log OR (0.6931) and the crude marginal one (0.3213), on the reasoning that a wider tolerance stops distinguishing the two estimands. The calibration shows those two requirements CANNOT BOTH BE MET at 40 clusters: the sampling distribution needs 0.89 and the estimand gap allows 0.37, so roughly one run in ten of a CORRECT implementation would have failed. Narrowing a tolerance below the sampling distribution does not sharpen a check, it makes it fire on correct work.",
+    "_so_the_estimand_distinction_is_carried_by_cluster_sd_instead": "A population-average model does not produce a between-cluster SD at all -- there is no such parameter in it -- so recovering 0.8 within 0.45 is a claim only a conditional model can make. That separates the two estimands STRUCTURALLY rather than by a numerical margin that the data cannot support. It is also why this entry needs per-key tolerances: 0.90 applied to a parameter whose whole miss distribution tops out at 0.40 would pass whatever it was handed."
   },
 
   "must_appear": {

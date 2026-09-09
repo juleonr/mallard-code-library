@@ -1,0 +1,38 @@
+{
+  "id": "linear-regression-robust-se",
+  "title": "Linear regression with heteroskedasticity-consistent standard errors",
+  "summary": "Estimates an adjusted mean difference, with a standard error that does not assume the two arms have the same spread.",
+
+  "estimand": {
+    "target": ["causal", "associational"],
+    "summaryMeasure": ["meanDifference"],
+    "assignment": ["randomized", "nonrandomized"],
+    "clustered": false,
+    "repeatedMeasures": false,
+    "competingEvents": false
+  },
+
+  "learn": "analysis.linear_regression",
+
+  "sizing": {
+    "calc": "twoMeans",
+    "_why": "The effect-based calculation for a two-arm mean difference. linearSPV is a subjects-per-variable FLOOR and is not a substitute for it: a floor says how many rows a model of this width needs before its coefficients are stable, not how many the study needs to detect the difference it is powered for."
+  },
+
+  "_clustering_is_a_different_entry": "clustered is false above. A robust sandwich standard error is NOT cluster-robust: it corrects for unequal variance between observations and assumes they are independent. Where observations share a ward, clinic or patient, the correction needed is by CLUSTER, and this entry must not be routed to such a plan.",
+
+  "packages": {
+    "r": { "sandwich": "3.1-3", "lmtest": "0.9-40" },
+    "python": { "statsmodels": "0.14.2", "pandas": "2.2.2", "numpy": "1.26.4", "scipy": "1.13.1" }
+  },
+
+  "pinned_defaults": [
+    "R: vcovHC(type = \"HC3\"). This IS sandwich's default and is named anyway, so a package upgrade cannot change the interval silently.",
+    "Python: cov_type=\"HC3\". statsmodels has NO robust default -- a bare .fit() is the classical variance -- so this is the one language where omitting the option gives an estimator that assumes what the data contradicts.",
+    "SAS: hccmethod=3. PROC REG's HCC ALONE IS HCCMETHOD=0, which is HC0.",
+    "Stata: vce(hc3). Stata's familiar `, robust` is HC1, not HC3.",
+    "The four languages therefore disagree by default while all four print the words robust standard errors: HC3, classical, HC0, HC1."
+  ],
+
+  "engines": { "r": "executed", "python": "executed", "sas": "not-executed", "stata": "not-executed" }
+}

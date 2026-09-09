@@ -8,16 +8,13 @@ code. Until now that code was written fresh for every plan and **never executed 
 library is the other half: a canonical implementation per method, run against a seeded fixture on
 every commit, so the method skeleton a plan builds on is known to work.
 
-> **Staging note.** This tree currently lives inside the Ask Mallard application repository while
-> the public repository is created. It has no imports from the application and no dependency on it,
-> so it moves wholesale. Nothing here should acquire one.
 
 ## What this library claims, and what it does not
 
 Every entry makes **two separate claims**, and conflating them would defeat the purpose.
 
 **Agreement.** Every executed language produces the same estimates from identical rows, to a
-tolerance of **1e-4**, which is measured rather than asserted.
+the tolerances recorded in each entry’s `expected.json`. Most outputs use **1e-4**; the GEE working-correlation estimate uses **1e-3** and its model-based standard error uses **5e-3**, with the observed differences and rationale recorded beside those keys.
 
 The first version of this README said 1e-6 and called it "far above optimiser noise". The first
 real run refuted that: `survival::clogit` and `statsmodels.ConditionalLogit` agreed to a spread of
@@ -46,6 +43,8 @@ on the same wrong model.
 Neither claim implies the other. Agreement alone passes identical mistakes; recovery alone passes a
 default mismatch smaller than sampling error. `harness/check.py` reports them separately and refuses
 to state the agreement claim at all when fewer than two engines ran.
+
+Installed R and Python package versions are checked against every metadata pin in CI. Execution states in `meta.json` and `expected.json` must agree, including unavailable implementations. Non-finite results, missing numeric outputs and missing recovery targets are failures. Explanatory transformations in `derived_truth` are not separate recovery checks.
 
 ### What the first runs actually found
 

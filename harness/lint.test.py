@@ -11,7 +11,9 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from lint import lint_sas, lint_stata  # noqa: E402
+import json  # noqa: E402
+from lint import (  # noqa: E402
+    lint_must_appear, lint_sas, lint_stata, strip_hash_comments, strip_sas_comments)
 
 FAILURES = []
 
@@ -66,7 +68,46 @@ proc genmod data=rr;
     repeated subject=id / type=ind;
 run;
 ''')
-        check("PROC GENMOD is NOT asked for event=", lint_sas(genmod) == [], lint_sas(genmod))
+        check("PROC GENMOD with dist=poisson is NOT asked for event=",
+              lint_sas(genmod) == [], lint_sas(genmod))
+
+        # BUT A BINOMIAL GENMOD HAS EXACTLY THE SAME DEFAULT, and the rule used to exempt it: its
+        # scope was written from the Poisson file above and generalised to all of GENMOD. Found
+        # 2026-09-08 when the first GENMOD-binomial file arrived; it set event='1' anyway, so
+        # nothing would have caught it if it had not.
+        genmod_bin_bad = write(tmp, "genmod_bin_bad.sas", '''proc genmod data=d;
+    class clinic;
+    model outcome = exposed x / dist=binomial link=logit;
+    repeated subject=clinic / type=exch;
+run;
+''')
+        check("PROC GENMOD with dist=binomial and no event= IS flagged",
+              len(lint_sas(genmod_bin_bad)) == 1, lint_sas(genmod_bin_bad))
+        check("and the finding names GENMOD rather than LOGISTIC",
+              "GENMOD" in (lint_sas(genmod_bin_bad) or [""])[0])
+
+        genmod_bin_ok = write(tmp, "genmod_bin_ok.sas", '''proc genmod data=d;
+    class clinic;
+    model outcome(event=\'1\') = exposed x / dist=binomial link=logit;
+    repeated subject=clinic / type=exch;
+run;
+''')
+        check("PROC GENMOD with dist=binomial and event= is not flagged",
+              lint_sas(genmod_bin_ok) == [], lint_sas(genmod_bin_ok))
+
+        # AND THE RULE IS PER STEP. The old version tested every model statement in the file as
+        # soon as one PROC LOGISTIC appeared anywhere in it, so this correct pairing was flagged
+        # for the Poisson step's statement.
+        mixed = write(tmp, "mixed.sas", '''proc logistic data=d;
+    model case(event=\'1\') = exposed;
+run;
+
+proc genmod data=d;
+    model count = exposed / dist=poisson link=log offset=logpt;
+run;
+''')
+        check("a correct LOGISTIC step beside a Poisson GENMOD step is not flagged",
+              lint_sas(mixed) == [], lint_sas(mixed))
 
         logistic_bad = write(tmp, "logistic_bad.sas", '''proc logistic data=d;
     strata set_id;
@@ -95,6 +136,116 @@ run;
 ''')
         check("a PROC LOGISTIC inside a COMMENT does not trigger the event= rule",
               lint_sas(commented) == [], lint_sas(commented))
+
+        check("statement comments cannot supply a pinned option", "ties=efron" not in strip_sas_comments("* pinned\nties=efron; proc phreg; run;"))
+        check("inline statement comments are removed", "event=" not in strip_sas_comments("proc logistic; * event='1'; model y=x; run;"))
+        check("multiplication survives", "x * y" in strip_sas_comments("data d; z=x * y; run;"))
+        check("quoted comment markers survive", "'/* * ; */'" in strip_sas_comments("data d; x='/* * ; */'; run;"))
+        event_variable = write(tmp, "event-variable.sas", "proc logistic; model event=x; run;")
+        check("a variable called event cannot supply event=", len(lint_sas(event_variable)) == 1)
+        actual = Path(__file__).resolve().parent.parent / "lib/cox-proportional-hazards/sas.sas"
+        check("byte-faithful current Cox SAS remains valid", lint_sas(actual) == [])
+
+        print("comment stripping (R and Python)")
+
+        # A `#` inside a string is not a comment. A regex-based stripper deletes the rest of the
+        # line here, and `must_appear` would then report a string it can plainly see as absent.
+        r_hash = 'sep <- "#"\nfit <- coxph(Surv(time, event) ~ exposed, ties = "efron")\n'
+        check("a # inside an R string is not treated as a comment",
+              'ties = "efron"' in strip_hash_comments(r_hash))
+        check("a real R comment IS stripped",
+              "efron" not in strip_hash_comments('fit <- lm(y ~ x)  # ties = "efron"\n'))
+
+        # A PYTHON DOCSTRING IS PROSE, and is dropped. This test asserted the opposite until
+        # 2026-09-08, when a python.py declared cov_struct=Exchangeable() in must_appear, wrote it
+        # in its module docstring, called the constructor a different way in the code, and PASSED.
+        # That is the "described but not set" case the check names as the more dangerous of the
+        # two -- available in the one language whose convention is to describe things in a string.
+        py_doc = '''"""Docstring mentioning # and cov_type="HC3" in prose."""
+res = mod.fit(cov_type="HC1")
+'''
+        stripped = strip_hash_comments(py_doc, triple=True)
+        check("a Python docstring's contents are DROPPED, like the comment they are",
+              'cov_type="HC3"' not in stripped)
+        check("code after a docstring containing a # survives it",
+              'cov_type="HC1"' in stripped)
+        check("an ordinary Python string literal is CODE and is kept",
+              "cov_type='naive'" in strip_hash_comments(
+                  "se = fit.standard_errors(cov_type='naive')\n", triple=True))
+        check("a real Python comment IS stripped",
+              "HC3" not in strip_hash_comments('res = mod.fit()  # HC3 would go here\n',
+                                               triple=True))
+        # BOTH DIRECTIONS on the real case: the same file, the option in the docstring only,
+        # against the same file with it in the call.
+        only_prose = '''"""Uses cov_struct=Exchangeable() throughout."""
+model = sm.GEE(y, X, groups=g, cov_struct=Independence())
+'''
+        in_code = '''"""Uses an exchangeable working correlation."""
+model = sm.GEE(y, X, groups=g, cov_struct=Exchangeable())
+'''
+        check("an option present only in the docstring is NOT code",
+              "cov_struct=Exchangeable()" not in strip_hash_comments(only_prose, triple=True))
+        check("the same option in the call IS code",
+              "cov_struct=Exchangeable()" in strip_hash_comments(in_code, triple=True))
+
+        print("must_appear")
+
+        def entry(name, expected, files):
+            d = Path(tmp) / name
+            d.mkdir()
+            (d / "expected.json").write_text(json.dumps(expected))
+            for fn, body in files.items():
+                (d / fn).write_text(body)
+            return d
+
+        SAS_OK = ("/* PINNED: ties=efron, because PROC PHREG defaults to Breslow. */\n"
+                  "proc phreg data=surv;\n"
+                  "    model time*event(0) = exposed / ties=efron;\n"
+                  "run;\n")
+        # The SAME file with the option deleted from the statement and left in the comment above
+        # it. This is byte-identical to SAS_OK apart from that deletion, which is the point: a
+        # substring search over the raw text cannot tell these two apart and calls both a pass.
+        SAS_COMMENT_ONLY = SAS_OK.replace(" / ties=efron;", ";")
+
+        good = entry("good", {"must_appear": {"sas": ["proc phreg", "ties=efron"]}},
+                     {"sas.sas": SAS_OK})
+        check("a file containing every declared string passes", lint_must_appear(good) == [],
+              lint_must_appear(good))
+
+        comment_only = entry("comment_only", {"must_appear": {"sas": ["ties=efron"]}},
+                             {"sas.sas": SAS_COMMENT_ONLY})
+        probs = lint_must_appear(comment_only)
+        check("a default named ONLY in a comment is flagged", len(probs) == 1, probs)
+        check("and the message says which of the two mistakes it is",
+              probs and "only in a comment" in probs[0], probs)
+
+        gone = entry("gone", {"must_appear": {"sas": ["ties=efron"]}},
+                     {"sas.sas": "proc phreg data=surv;\n    model t*e(0) = x;\nrun;\n"})
+        probs = lint_must_appear(gone)
+        check("a declared string absent altogether is flagged", len(probs) == 1, probs)
+        check("and is reported as absent rather than as a comment",
+              probs and "absent" in probs[0], probs)
+
+        # SAS is case-insensitive as a language; the declaration must not depend on how the file
+        # happens to be typed.
+        shouty = entry("shouty", {"must_appear": {"sas": ["proc phreg", "ties=efron"]}},
+                       {"sas.sas": SAS_OK.upper()})
+        check("a declaration matches SAS written in upper case", lint_must_appear(shouty) == [],
+              lint_must_appear(shouty))
+
+        # The other direction: a rule that only checks what it was handed asserts its own scope.
+        undeclared = entry("undeclared", {"must_appear": {"r": ["coxph("]}},
+                           {"r.R": "fit <- coxph(Surv(t, e) ~ x)\n", "stata.do": "stcox x, efron\n"})
+        probs = lint_must_appear(undeclared)
+        check("a language file that declares NOTHING is flagged", len(probs) == 1, probs)
+        check("and the finding names the undeclared language",
+              probs and "stata" in probs[0], probs)
+
+        ghost = entry("ghost", {"must_appear": {"sas": ["proc phreg"]}},
+                      {"r.R": "fit <- coxph(Surv(t, e) ~ x)  # no sas.sas beside it\n"})
+        probs = lint_must_appear(ghost)
+        check("declaring a language whose file is missing is flagged",
+              any("does not exist" in p for p in probs), probs)
 
     print()
     if FAILURES:

@@ -6,7 +6,6 @@
   "truth": {
     "source": "the fixture's data-generating process",
     "exposure_log_rr": 0.4054651081081644,
-    "exposure_rr": 1.5,
     "covariate_beta": 0.2
   },
   "agreement": {
@@ -55,5 +54,9 @@
       "executed": false,
       "reason": "no Stata licence; and vce(robust) applies a finite-sample correction, so its SE would need its own tolerance rather than HC0's"
     }
+  },
+  "derived_truth": {
+    "exposure_rr": 1.5,
+    "note": "Exponentiated generating coefficient for interpretation only; recovery is checked on the log scale in truth."
   }
 }

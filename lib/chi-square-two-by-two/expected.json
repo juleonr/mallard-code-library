@@ -1,0 +1,43 @@
+{
+  "method": "chi-square-two-by-two",
+  "fixture": "fixture.csv",
+
+  "_why_not_self_generated": "The outcome is Bernoulli with a probability that depends only on the exposure, so the odds ratio the generator implies IS the parameter the table estimates. There is no model, no link function and nothing to misspecify between the truth and the estimate.",
+
+  "truth": {
+    "source": "the fixture's data-generating process",
+    "log_or": 0.7672551527,
+    "risk_exposed": 0.35,
+    "risk_unexposed": 0.20,
+    "risk_difference": 0.15
+  },
+
+  "agreement": {
+    "claim": "both engines report the same corrected and uncorrected chi-square, the same odds ratio, and the same Fisher p on identical rows",
+    "tolerance_estimate": 0.0001,
+    "tolerance_se": 0.0001,
+    "_note": "YATES' CORRECTION IS WHAT THIS CHECKS, and the gap is 49.9008878128 uncorrected against 49.1854721550 corrected: 0.715, seven thousand times the tolerance. Every expected count in this fixture is in the hundreds, so this is not the sparse-table edge case the correction is usually defended for.",
+    "_fisher_is_compared_on_the_log_scale": "neg_log10_p_fisher rather than the p value itself, which is 1.9e-12 here: a tolerance of 1e-4 on a number that small is satisfied by any two answers at all, including two wrong ones. The log scale is where a disagreement would show. Note that R and scipy resolve near-ties among candidate tables with their own relative tolerances, so this key is the one most likely to expose a genuine difference between the two implementations rather than a mistake in either."
+  },
+
+  "recovery": {
+    "claim": "the estimated odds ratio and risks are close to the ones the fixture used",
+    "tolerance_estimate": 0.4,
+    "_calibration": "MEASURED over 300 alternative seeds of this generator: |log OR - truth| had a median of 0.0690, a 95th percentile of 0.2012 and a maximum of 0.3549, so none exceeded 0.4. The committed seed's miss is 0.0358, about a third of a standard error.",
+    "_one_tolerance_over_two_scales": "The harness applies ONE recovery tolerance to every key `truth` names, and these keys are on two scales: a log odds ratio with a standard error of 0.105 and three proportions with standard errors around 0.02. Sized for the log odds ratio, 0.4 is loose on the proportions -- it catches a sign flip, a swapped exposure column or a proportion reported as a percentage, and nothing finer. The proportions are kept in `truth` anyway, because a loose check on them is better than the none they would otherwise get. Per-key tolerances would be the real fix and are a change to the shared harness rather than to this entry."
+  },
+
+  "must_appear": {
+    "r": ["chisq.test(", "correct = FALSE", "fisher.test("],
+    "python": ["chi2_contingency", "correction=False", "fisher_exact"],
+    "sas": ["proc freq", "chisq"],
+    "stata": ["tabulate exposed outcome, chi2 exact"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": true },
+    "sas": { "executed": false, "reason": "no SAS engine licensed" },
+    "stata": { "executed": false, "reason": "no Stata licence" }
+  }
+}

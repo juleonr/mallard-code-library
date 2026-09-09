@@ -20,7 +20,7 @@
   "recovery": {
     "claim": "the estimate is close to the hazard ratio the fixture used",
     "tolerance_estimate": 0.25,
-    "_note": "PROVISIONAL until the first run reports the observed SE. Roughly three standard errors under a rough SE of about 0.08 for 785 events. The other entries' provisional guesses were both wrong (0.15 against 0.13 observed, and 0.04 against 0.097), so this will be reset from measurement like theirs were."
+    "_calibration": "NO LONGER PROVISIONAL, and this time the guess was right. Measured over 300 alternative seeds of the generator, fitted with a stdlib Cox partial-likelihood MLE with Efron ties -- not survival, not lifelines -- which reproduces R's answer on the committed fixture to seven decimals (0.4455719 against 0.4455718870, SE 0.0716504 against 0.0716504061). Log hazard ratio miss: median 0.0458, 95th percentile 0.1408, maximum 0.2013. Covariate miss: median 0.0250, 95th 0.0685, maximum 0.1481. No seed of the 300 exceeded 0.25. The committed seed misses by 0.0244 and 0.0044. The provisional reasoning -- about three standard errors under an SE near 0.08 -- happened to land correctly here, which the two entries before it did not (0.15 against 0.13 observed, 0.04 against 0.097); a guess that turns out right is still a guess until it is measured."
   },
 
   "must_appear": {

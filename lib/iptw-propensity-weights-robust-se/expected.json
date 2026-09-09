@@ -1,0 +1,41 @@
+{
+  "method": "iptw-propensity-weights-robust-se",
+  "fixture": "fixture.csv",
+
+  "_why_not_self_generated": "Both potential outcomes are drawn for every patient from P(Y(a)=1|L) = expit(b0 + b1*a + b2*L), and only the observed one is written to the file. The average treatment effect is then the integral E_L[expit(b0+b1+b2 L)] - E_L[expit(b0+b2 L)], evaluated by 60-node Gauss-Hermite quadrature to about 1e-12. It is a property of the population, defined before any estimator exists, rather than a recording of what this code produced.",
+
+  "_the_truth_is_the_ATE_and_that_choice_is_load_bearing": "IPTW as written here targets the average treatment effect. Matching without replacement targets the effect among the TREATED, and on confounded data those are different numbers rather than two routes to one. An entry whose truth came from one estimator would be scoring the other for disagreeing.",
+
+  "truth": {
+    "source": "the fixture's data-generating process, by quadrature",
+    "ate_iptw": 0.1457586545
+  },
+
+  "agreement": {
+    "claim": "geepack-free: R's sandwich-corrected weighted linear model and statsmodels' WLS fit the same two-stage estimator on the same rows and agree on the effect, both standard errors, the propensity coefficient and the weight diagnostics",
+    "tolerance_estimate": 0.0001,
+    "tolerance_se": 0.0001,
+    "_the_se_keys_are_the_ones_to_watch": "ate_se_robust is R's sandwich::vcovHC(type='HC0') on a weighted glm against statsmodels' WLS with cov_type='HC0'. Those are the same estimator mathematically, but they are two implementations of a weighted sandwich and the packages' conventions for the weighting inside it need not coincide. Included at the ordinary tolerance deliberately: if they differ, the entry says which and why rather than loosening the key."
+  },
+
+  "recovery": {
+    "claim": "the weighted estimate is close to the ATE the fixture's population actually has",
+    "tolerance_estimate": 0.06,
+    "_calibration": "Measured over 300 alternative seeds of the generator, fitted with a stdlib IRLS logistic propensity model and a Hajek weighted risk difference -- not sandwich, not statsmodels. Miss from the true 0.1457586545: median 0.0094, 95th percentile 0.0312, maximum 0.0443. The committed seed misses by 0.0107.",
+    "_and_the_tolerance_rejects_the_UNADJUSTED_estimator_outright": "That is the property worth having, and it is measured rather than hoped for: across the same 300 seeds the CRUDE risk difference misses the ATE by at least 0.0736, with a median of 0.1185. Every one of the 300 is outside 0.06. So an implementation that silently dropped the weights, or inverted them, could not pass this entry's recovery claim -- the check separates the analysis from no analysis, not merely from a wild one."
+  },
+
+  "must_appear": {
+    "r": ["vcovHC(out, type = \"HC0\")", "family = gaussian(link = \"identity\")", "weights = w", "p_treat / e"],
+    "python": ["sm.WLS(y, X, weights=w)", "cov_type=\"HC0\"", "p_treat / e"],
+    "sas": ["event='1'", "dist=normal link=identity", "repeated subject=id", "weight w"],
+    "stata": ["[pweight=w]", "vce(robust)", "predict ps, pr"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": true },
+    "sas": { "executed": false, "reason": "no SAS engine licensed" },
+    "stata": { "executed": false, "reason": "no Stata licence" }
+  }
+}

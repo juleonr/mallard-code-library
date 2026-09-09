@@ -1,0 +1,46 @@
+{
+  "method": "gee-working-correlation-robust-se",
+  "fixture": "fixture.csv",
+
+  "_why_not_self_generated": "The outcome is drawn from p = expit(b0 + b1*exposed + b2*x) and thresholded against a latent normal whose within-cluster correlation is 0.25. The latent variable is standard normal marginally whatever that correlation is, so P(Y=1) is exactly p and b1 IS the marginal log odds ratio. GEE targets that parameter, so the recovery claim measures the implementation rather than the gap between a conditional and a marginal estimand.",
+
+  "truth": {
+    "source": "the fixture's data-generating process",
+    "exposure_log_or": 0.6931471805599453,
+    "covariate_beta": 0.30
+  },
+
+  "agreement": {
+    "claim": "geepack and statsmodels fit the same exchangeable-working-correlation GEE on the same rows and agree on the coefficients and both standard errors; the two keys computed from the estimated working correlation agree to their own stated tolerances, which are looser and argued below",
+    "tolerance_estimate": 0.0001,
+    "tolerance_se": 0.0001,
+    "tolerance_by_key": {
+      "alpha_exchangeable": 0.001,
+      "exposure_se_naive": 0.005
+    },
+    "_they_did_disagree_and_the_entry_says_so_rather_than_dropping_the_key": "alpha_exchangeable was included deliberately as the key most likely to differ, and it does. MEASURED IN CI: geepack 0.1849411436 against statsmodels 0.1847036384, a spread of 2.375e-04. exposure_se_naive follows it -- 0.1187875776 against 0.1172338035, 1.554e-03 -- because a model-based variance under an exchangeable structure is computed FROM the working correlation and inherits its estimator. Neither is a defect: the exchangeable alpha is a MOMENT estimator that is not uniquely defined, and two packages are entitled to different residual scalings.",
+    "_and_the_disagreement_is_localised_which_is_what_makes_that_argument_checkable": "The two engines agree to ten decimals on every key of the INDEPENDENCE fit -- exposure_log_or_independence 0.5726722441, exposure_se_robust_independence 0.1685252182, exposure_se_naive_independence 0.0944282807 -- and on the exchangeable fit's coefficients and sandwich error. An independence fit has no alpha. So the disagreement appears exactly where alpha enters and nowhere else, which is the evidence that it is the estimator and not an implementation fault.",
+    "_the_loosened_tolerances_still_reject_what_matters": "A wrong working correlation is not a small difference: independence gives alpha = 0 against 0.185, and a naive SE of 0.0944 against 0.1188. The tolerances above are 185x and 5x below those gaps, so they admit two moment estimators and still reject a structurally different fit. Loosening a key is an admission that has to be argued, which is what this note is."
+  },
+
+  "recovery": {
+    "claim": "the estimate is close to the MARGINAL log odds ratio the fixture used",
+    "tolerance_estimate": 0.50,
+    "_calibration": "Measured over 200 alternative seeds of the generator, fitted with a stdlib IRLS logistic regression that is not one of the library's engines (the independence-working-correlation point estimate). Miss from the true 0.6931: median 0.1190, 95th percentile 0.3283, maximum 0.3978. The committed seed misses by 0.1205.",
+    "_the_claim_is_weak_and_that_is_stated_rather_than_hidden": "0.50 is most of the effect being estimated. Exposure is allocated largely at the clinic level, so the effective sample size is closer to 90 clinics than 2169 patients and the sampling distribution is genuinely this wide. The claim that carries this entry is AGREEMENT, plus the naive-against-robust ratio on a WORKING-INDEPENDENCE fit, which is 1.785 on the committed seed and above 1.3 on 98% of the 200 calibration seeds -- so the demonstration is a property of the design, not of the seed. Under an exchangeable working correlation the same ratio is much smaller and the entry reports both, because a model-based variance computed under the right structure already carries the correlation."
+  },
+
+  "must_appear": {
+    "r": ["geeglm(", "corstr = \"exchangeable\"", "order(d$clinic)", "vbeta.naiv"],
+    "python": ["Exchangeable()", "Independence()", "cov_type='naive'", "groups=\"clinic\""],
+    "sas": ["type=exch", "event='1'", "modelse", "repeated subject=clinic"],
+    "stata": ["corr(exchangeable)", "vce(robust)", "xtset clinic"]
+  },
+
+  "engines": {
+    "r": { "executed": true },
+    "python": { "executed": true },
+    "sas": { "executed": false, "reason": "no SAS engine licensed" },
+    "stata": { "executed": false, "reason": "no Stata licence" }
+  }
+}

@@ -47,6 +47,35 @@ land near the truth: the fixture would not test what the entry is for.
 an unclustered two-group formula or a per-variable floor as *the* method for a clustered design is
 a documented error. The alternative to a wrong number is no number.
 
+## The recovery tolerance, and the requirement it turned out could not be met
+
+This entry shipped with a **provisional** tolerance of 0.45, chosen so it would stay narrower than
+the gap between the conditional log odds ratio (0.6931) and the crude marginal one (0.3213) — the
+reasoning being that a wider tolerance would stop distinguishing the two estimands, which is the one
+thing this entry must not do.
+
+**Calibration showed those two requirements cannot both be met at 40 clusters.** Fitted over 300
+alternative seeds with a stdlib random-intercept MLE by 30-node Gauss-Hermite quadrature — not
+`lme4`, not `statsmodels`, and it reproduces `glmer`'s answer on the committed fixture to five
+decimals — the miss distribution is:
+
+| | median | 95th | max |
+|---|---|---|---|
+| conditional log OR | 0.1927 | 0.5598 | 0.8859 |
+| between-cluster SD | 0.0832 | 0.2414 | 0.4033 |
+
+The sampling distribution needs **0.89**; the estimand gap allows **0.37**. At 0.45, roughly one run
+in ten of a **correct** implementation would have failed. Narrowing a tolerance below the sampling
+distribution does not sharpen a check — it makes it fire on correct work, which is how a guard
+earns the reputation that gets it deleted.
+
+**So the estimand distinction is carried by `cluster_sd` instead**, at its own tolerance of 0.45.
+A population-average model does not produce a between-cluster SD at all: there is no such parameter
+in it. Recovering 0.8 within 0.45 is therefore a claim only a conditional model can make, and it
+separates the two estimands **structurally** rather than by a numerical margin the data cannot
+support. That is also why the harness grew per-key recovery tolerances: 0.90 applied to a parameter
+whose entire miss distribution tops out at 0.40 would pass whatever it was handed.
+
 ## Verification
 
 | Engine | Status |
