@@ -77,6 +77,7 @@ jobs:
           python harness/lint.test.py
           python harness/lint.py --root lib
           python harness/new_examples.test.py
+          python harness/iptw_scope.test.py
 
       - name: Run every entry and check both claims
         run: |
@@ -130,4 +131,3 @@ jobs:
           echo "Entries with the agreement claim untested: **$untested**" >> "$GITHUB_STEP_SUMMARY"
 
           exit $fail
-
