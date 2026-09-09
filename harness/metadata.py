@@ -43,7 +43,7 @@ def declarations(root):
 def check_installed(packages):
     actual = {"r": {}, "python": {}}
     for name in packages["r"]:
-        value = subprocess.check_output(["Rscript", "-e", f'cat(as.character(packageVersion("{name}")))'], text=True).strip()
+        value = subprocess.check_output(["Rscript", "-e", f'cat(packageDescription("{name}")$Version)'], text=True).strip()
         actual["r"][name] = value
     for name in packages["python"]:
         actual["python"][name] = importlib.metadata.version(name)
